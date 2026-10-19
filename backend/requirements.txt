@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+supabase
+pyjwt[crypto]
+httpx
+resend
+slowapi
+python-multipart
