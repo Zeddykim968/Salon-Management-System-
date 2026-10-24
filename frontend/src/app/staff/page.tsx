@@ -6,7 +6,6 @@ import { useCallback, useEffect, useState } from "react";
 import StatusBadge from "@/components/StatusBadge";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import { ApiError, api, kes } from "@/lib/api";
-import { createClient } from "@/lib/supabase";
 import type { Booking, Me, StaffStatus } from "@/lib/types";
 
 const STATUSES: StaffStatus[] = ["available", "busy", "off"];
@@ -38,23 +37,12 @@ export default function StaffHomePage() {
     void load();
   }, [load]);
 
-  // live updates when the admin/cust changes something
+  // live updates when the admin/cust changes something — Django has no
+  // websocket layer, so poll the schedule while the page is open.
   useEffect(() => {
     if (!me) return;
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`staff-bookings-${me.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "bookings", filter: `staff_id=eq.${me.id}` },
-        () => {
-          void load();
-        }
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    const interval = setInterval(() => void load(), 15000);
+    return () => clearInterval(interval);
   }, [me, load]);
 
   async function setStatus(status: StaffStatus) {

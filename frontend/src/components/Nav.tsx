@@ -5,8 +5,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { api, ApiError } from "@/lib/api";
-import { createClient } from "@/lib/supabase";
+import { clearTokens, hasSession } from "@/lib/auth";
 import type { Me } from "@/lib/types";
+import ThemeToggle from "./ThemeToggle";
 
 const LINKS: Record<string, { href: string; label: string }[]> = {
   customer: [
@@ -50,9 +51,7 @@ export default function Nav() {
     let alive = true;
     (async () => {
       try {
-        const supabase = createClient();
-        const { data } = await supabase.auth.getSession();
-        if (!data.session) {
+        if (!hasSession()) {
           if (alive) setMe(null);
         } else {
           const profile = await api<Me>("/me");
@@ -72,7 +71,7 @@ export default function Nav() {
   async function signOut() {
     setSigningOut(true);
     try {
-      await createClient().auth.signOut();
+      clearTokens();
     } finally {
       setMe(null);
       setSigningOut(false);
@@ -87,9 +86,10 @@ export default function Nav() {
     <header className="nav">
       <div className="container nav-inner">
         <Link href="/" className="brand">
-          SALON
+          Beauty Parlour
         </Link>
         <nav className="nav-links">
+          <ThemeToggle />
           {links.map((link) => (
             <Link
               key={link.href}
@@ -118,7 +118,7 @@ export default function Nav() {
                 Log in
               </Link>
               <Link href="/register" className="btn btn-lime btn-sm">
-                Join now
+                Be part of us
               </Link>
             </>
           )}

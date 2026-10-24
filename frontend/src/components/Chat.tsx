@@ -3,12 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 
 import { api } from "@/lib/api";
-import { createClient } from "@/lib/supabase";
 import type { Message } from "@/lib/types";
 
 /**
- * Live chat thread with one user. Incoming messages arrive through Supabase
- * Realtime (postgres_changes filtered to the signed-in recipient).
+ * Chat thread with one user. The Django API has no websocket layer, so new
+ * messages arrive via light polling while the thread is open.
  */
 export default function Chat({
   otherId,
@@ -22,19 +21,15 @@ export default function Chat({
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [myId, setMyId] = useState<string | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
 
-  // load thread + my id
+  // load thread
   useEffect(() => {
     let alive = true;
     setLoading(true);
     setError(null);
     (async () => {
       try {
-        const supabase = createClient();
-        const { data } = await supabase.auth.getSession();
-        if (alive) setMyId(data.session?.user.id ?? null);
         const thread = await api<Message[]>(`/messages?user_id=${otherId}`);
         if (alive) setMessages(thread);
       } catch (e) {
@@ -48,33 +43,23 @@ export default function Chat({
     };
   }, [otherId]);
 
-  // realtime: new messages addressed to me
+  // poll for new messages while the thread is open
   useEffect(() => {
-    if (!myId) return;
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`messages-${myId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `recipient_id=eq.${myId}`,
-        },
-        (payload) => {
-          const row = payload.new as Message;
-          if (row.sender_id !== otherId && row.recipient_id !== otherId) return;
-          setMessages((prev) =>
-            prev.some((m) => m.id === row.id) ? prev : [...prev, { ...row, from_me: false }]
-          );
-        }
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
+    let alive = true;
+    const tick = async () => {
+      try {
+        const thread = await api<Message[]>(`/messages?user_id=${otherId}`);
+        if (alive) setMessages(thread);
+      } catch {
+        /* transient — keep the last good thread */
+      }
     };
-  }, [myId, otherId]);
+    const interval = setInterval(() => void tick(), 8000);
+    return () => {
+      alive = false;
+      clearInterval(interval);
+    };
+  }, [otherId]);
 
   // keep the view pinned to the newest message
   useEffect(() => {
@@ -109,7 +94,7 @@ export default function Chat({
         style={{ padding: "14px 16px", borderBottom: "1px solid var(--line)" }}
       >
         <strong>{otherName}</strong>
-        <span className="small muted">live · Supabase Realtime</span>
+        <span className="small muted">in-app chat</span>
       </div>
 
       <div className="chat-body" ref={bodyRef}>

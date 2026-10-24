@@ -14,16 +14,25 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b0b10",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fff6fb" },
+    { media: "(prefers-color-scheme: dark)", color: "#150a1f" },
+  ],
   width: "device-width",
   initialScale: 1,
 };
+
+// Applies the saved theme before paint so there's no flash of the wrong colors.
+const themeInit = `try{var t=localStorage.getItem("salon_theme");if(t==="dark"||(!t&&matchMedia("(prefers-color-scheme: dark)").matches)){document.documentElement.setAttribute("data-theme","dark")}}catch(e){}`;
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInit }} />
+      </head>
       <body>
         <Nav />
         <main>{children}</main>

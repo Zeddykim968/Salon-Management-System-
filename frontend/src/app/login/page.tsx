@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
-import { api, type ApiOptions } from "@/lib/api";
-import { createClient } from "@/lib/supabase";
+import { api } from "@/lib/api";
+import { saveTokens } from "@/lib/auth";
 import type { Me } from "@/lib/types";
 
 function homeFor(role: string) {
@@ -31,13 +31,12 @@ function LoginInner() {
     setError(null);
     setInfo(null);
     try {
-      const supabase = createClient();
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      if (authError) throw new Error(authError.message);
-      if (!data.session) throw new Error("No session returned");
+      const data = await api<{ access: string; refresh: string; role: string }>(
+        "/auth/login",
+        { json: { email: email.trim(), password }, auth: false }
+      );
+      if (!data?.access) throw new Error("No session returned");
+      saveTokens({ access: data.access, refresh: data.refresh });
 
       // route by role — the backend is the authority
       let destination = next || "/account";
@@ -62,14 +61,7 @@ function LoginInner() {
     setError(null);
     setInfo(null);
     try {
-      const supabase = createClient();
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        email.trim(),
-        {
-          redirectTo: `${window.location.origin}/auth/callback?next=/set-password`,
-        }
-      );
-      if (resetError) throw new Error(resetError.message);
+      await api("/auth/password-reset", { json: { email: email.trim() }, auth: false });
       setInfo("Check your inbox — we sent a password reset link.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not send the reset email");

@@ -1,31 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 
 import { api } from "@/lib/api";
-import { createClient } from "@/lib/supabase";
-import type { Me } from "@/lib/types";
 
-function homeFor(role: string) {
-  if (role === "admin") return "/admin";
-  if (role === "salonist" || role === "nail_tech") return "/staff";
-  return "/account";
-}
+function SetPasswordInner() {
+  const searchParams = useSearchParams();
+  const uid = searchParams.get("uid") || "";
+  const token = searchParams.get("token") || "";
 
-export default function SetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [hasSession, setHasSession] = useState<boolean | null>(null);
+  const [done, setDone] = useState(false);
 
-  useEffect(() => {
-    createClient()
-      .auth.getSession()
-      .then(({ data }) => setHasSession(Boolean(data.session)))
-      .catch(() => setHasSession(false));
-  }, []);
+  const hasLink = Boolean(uid && token);
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
@@ -34,32 +26,24 @@ export default function SetPasswordPage() {
     try {
       if (password.length < 8) throw new Error("Password must be at least 8 characters");
       if (password !== confirm) throw new Error("Passwords do not match");
-      const supabase = createClient();
-      const { error: updateError } = await supabase.auth.updateUser({ password });
-      if (updateError) throw new Error(updateError.message);
-
-      let destination = "/account";
-      try {
-        const me = await api<Me>("/me");
-        destination = homeFor(me.role);
-      } catch {
-        /* profile may still be propagating */
-      }
-      window.location.assign(destination);
+      await api("/auth/set-password", { json: { uid, token, password }, auth: false });
+      setDone(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not save the password");
+    } finally {
       setBusy(false);
     }
   }
 
-  if (hasSession === false) {
+  if (!hasLink) {
     return (
       <div className="container page" style={{ maxWidth: 480 }}>
         <div className="card" style={{ textAlign: "center", padding: 32 }}>
-          <h2>Link expired?</h2>
+          <h2>Link missing</h2>
           <p className="muted">
-            We couldn&apos;t verify this link. Request a new one from the login
-            page — or ask the admin to re-send your staff invite.
+            This page is opened from the secure link in your email. Request a
+            new one from the login page — or ask the admin to re-send your staff
+            invite.
           </p>
           <Link href="/login" className="btn btn-primary">
             Go to login
@@ -69,10 +53,16 @@ export default function SetPasswordPage() {
     );
   }
 
-  if (hasSession === null) {
+  if (done) {
     return (
-      <div className="loading" style={{ paddingTop: 90 }}>
-        <span className="spinner" />
+      <div className="container page" style={{ maxWidth: 480 }}>
+        <div className="card" style={{ textAlign: "center", padding: 32 }}>
+          <h2>Password set ✓</h2>
+          <p className="muted">You can now sign in with your new password.</p>
+          <Link href="/login" className="btn btn-primary">
+            Go to login
+          </Link>
+        </div>
       </div>
     );
   }
@@ -81,8 +71,7 @@ export default function SetPasswordPage() {
     <div className="container page" style={{ maxWidth: 460 }}>
       <h1 style={{ fontSize: "2.2rem" }}>Set your password</h1>
       <p className="muted">
-        One last step — this password is stored by Supabase Auth (never by the
-        salon app itself).
+        One last step — choose the password you&apos;ll use to sign in.
       </p>
 
       {error ? <div className="alert error">{error}</div> : null}
@@ -128,5 +117,13 @@ export default function SetPasswordPage() {
         </button>
       </form>
     </div>
+  );
+}
+
+export default function SetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="loading" style={{ paddingTop: 90 }}><span className="spinner" /></div>}>
+      <SetPasswordInner />
+    </Suspense>
   );
 }

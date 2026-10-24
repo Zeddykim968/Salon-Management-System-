@@ -6,7 +6,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 
 import StatusBadge from "@/components/StatusBadge";
 import { ApiError, api, kes } from "@/lib/api";
-import { createClient } from "@/lib/supabase";
+import { hasSession } from "@/lib/auth";
 import type { Availability, Booking, Service } from "@/lib/types";
 
 function isoDay(date: Date) {
@@ -43,10 +43,7 @@ function BookInner() {
 
   // sign-in check
   useEffect(() => {
-    createClient()
-      .auth.getSession()
-      .then(({ data }) => setSignedIn(Boolean(data.session)))
-      .catch(() => setSignedIn(false));
+    setSignedIn(hasSession());
   }, []);
 
   // service list
@@ -180,7 +177,7 @@ function BookInner() {
         href={serviceId ? `/styles/${serviceId}` : "/#services"}
         className="small muted"
       >
-        ← Back to style
+        ← Back to hairstyles
       </Link>
 
       <div className="page-head" style={{ marginTop: 14 }}>

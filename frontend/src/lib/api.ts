@@ -1,4 +1,4 @@
-import { createClient } from "./supabase";
+import { clearTokens, getAccessToken, getRefreshToken, saveTokens } from "./auth";
 
 export const API_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
@@ -13,13 +13,42 @@ export class ApiError extends Error {
   }
 }
 
-async function accessToken(): Promise<string | null> {
+// True while a /auth/refresh call is in flight, so concurrent requests wait
+// on one refresh instead of firing one each.
+let refreshing: Promise<string | null> | null = null;
+
+async function tryRefresh(): Promise<string | null> {
+  const refresh = getRefreshToken();
+  if (!refresh) return null;
   try {
-    const supabase = createClient();
-    const { data } = await supabase.auth.getSession();
-    return data.session?.access_token ?? null;
+    const res = await fetch(`${API_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ refresh }),
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      clearTokens();
+      return null;
+    }
+    const data = (await res.json()) as { access: string; refresh?: string };
+    saveTokens({ access: data.access, refresh: data.refresh ?? refresh });
+    return data.access;
   } catch {
     return null;
+  }
+}
+
+/** Return a usable access token, refreshing it first if it has expired. */
+async function accessToken(): Promise<string | null> {
+  const token = getAccessToken();
+  if (token) return token;
+  if (!getRefreshToken()) return null;
+  refreshing = refreshing ?? tryRefresh();
+  try {
+    return await refreshing;
+  } finally {
+    refreshing = null;
   }
 }
 

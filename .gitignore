@@ -2,7 +2,7 @@
 .env
 .env.*
 !.env*.example
-!frontend/.env.local.example
+frontend/.env.local.example
 
 # python
 .venv/
@@ -22,3 +22,5 @@ npm-debug.log*
 .DS_Store
 *.log
 !.keep
+
+supabase/

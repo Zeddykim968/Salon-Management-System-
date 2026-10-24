@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { createClient } from "@/lib/supabase";
+import { api } from "@/lib/api";
 
 export default function RegisterPage() {
   const [fullName, setFullName] = useState("");
@@ -20,23 +20,16 @@ export default function RegisterPage() {
     setError(null);
     try {
       if (password.length < 8) throw new Error("Password must be at least 8 characters");
-      const supabase = createClient();
-      const { data, error: authError } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: { full_name: fullName.trim(), phone: phone.trim() },
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=/account`,
+      await api("/auth/register", {
+        json: {
+          email: email.trim(),
+          password,
+          full_name: fullName.trim(),
+          phone: phone.trim() || undefined,
         },
+        auth: false,
       });
-      if (authError) throw new Error(authError.message);
-
-      if (data.session) {
-        // email confirmation disabled → straight in
-        window.location.assign("/account");
-      } else {
-        setConfirming(true);
-      }
+      setConfirming(true);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Registration failed");
     } finally {
@@ -54,7 +47,7 @@ export default function RegisterPage() {
             We sent a confirmation link to <b>{email}</b>. Click it to activate
             your account, then log in.
           </p>
-          <Link href="/login" className="btn btn-lime">
+          <Link href="/login" className="btn btn-primary">
             Go to login
           </Link>
         </div>

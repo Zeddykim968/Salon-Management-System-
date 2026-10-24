@@ -124,7 +124,7 @@ export default function AdminStaffPage() {
           </button>
         </div>
         <p className="small muted" style={{ marginTop: 10 }}>
-          Supabase sends the invite email; the new member lands on
+          Email sends the invite; the new member lands on
           <b> /set-password</b> and their schedule is seeded Mon–Sat 09:00–18:00
           with their category&apos;s services.
         </p>

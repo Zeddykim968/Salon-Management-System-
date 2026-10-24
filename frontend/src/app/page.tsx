@@ -72,9 +72,9 @@ export default function HomePage() {
             </a>
           </div>
           <div className="row tight" style={{ marginTop: 26 }}>
-            <span className="chip">⚡ Instant slots</span>
+            <span className="chip">⚡ Instant slots and booking</span>
             <span className="chip">💬 WhatsApp first</span>
-            <span className="chip">🎓 Student friendly</span>
+            <span className="chip"> Your trusted Salon</span>
           </div>
         </div>
         {hero ? (
@@ -87,8 +87,8 @@ export default function HomePage() {
 
       {error ? (
         <div className="alert error" style={{ marginTop: 18 }}>
-          {error} — start the backend (<code>uvicorn app.main:app</code>) and
-          Supabase to see live data.
+          {error} — start the Django backend (<code>python manage.py runserver</code>)
+          to see live data.
         </div>
       ) : null}
 
@@ -97,7 +97,7 @@ export default function HomePage() {
         <div className="page-head">
           <div>
             <h2>Styles & prices</h2>
-            <p className="muted">What you see is what you pay.</p>
+            <p className="muted">What you like is what you pay.</p>
           </div>
         </div>
 
@@ -155,7 +155,7 @@ export default function HomePage() {
           <div>
             <h2>The crew</h2>
             <p className="muted">
-              Availability is live — green means they&apos;re taking bookings
+              Availability is realtime — green means they&apos;re taking bookings
               today.
             </p>
           </div>

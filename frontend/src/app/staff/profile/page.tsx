@@ -9,6 +9,7 @@ interface StaffProfile extends Me {
   bio: string | null;
   whatsapp: string | null;
   status: string;
+  avatar_url: string | null;
   services: (Service & { assigned: boolean })[];
 }
 

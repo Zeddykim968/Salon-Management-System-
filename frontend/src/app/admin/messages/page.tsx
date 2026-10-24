@@ -34,7 +34,7 @@ export default function AdminMessagesPage() {
       <div className="page-head">
         <div>
           <h1 style={{ fontSize: "clamp(1.8rem, 4vw, 2.5rem)" }}>Messages</h1>
-          <p className="muted">Live chat with staff and customers (Supabase Realtime).</p>
+          <p className="muted">Chat with staff and customers — messages refresh live.</p>
         </div>
       </div>
 
