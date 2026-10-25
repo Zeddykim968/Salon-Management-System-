@@ -1,5 +1,6 @@
 """API routes — paths match what the Next.js client already calls."""
 from django.urls import path
+from django.http import HttpRequest, JsonResponse
 
 from .views import admin as admin_views
 from .views import auth as auth_views
@@ -8,8 +9,13 @@ from .views import messages as message_views
 from .views import public as public_views
 from .views import staff as staff_views
 
+# Option 1: prefix with an underscore (Django passes it positionally, so this is safe)
+def home(_request: HttpRequest) -> JsonResponse:
+    return JsonResponse({"status": "ok", "service": "salon-management-system"})
+
 urlpatterns = [
     path("health", public_views.health),
+    path("", home),
     # --- auth -----------------------------------------------------------------
     path("auth/register", auth_views.register),
     path("auth/verify-email", auth_views.verify_email),
