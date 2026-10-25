@@ -94,24 +94,23 @@ def create_booking(request):
     serializer = BookingSerializer(booking)
     data = serializer.data
 
-    # Notify both sides (best effort: missing keys just log).
+    # Notify the customer by email (best effort: a missing Brevo key just logs).
     notify.email_booking_created(
         to=user.email,
         staff_name=staff.full_name,
         service_name=service.name,
         when_text=data["when"],
     )
+    # WhatsApp has no server-side send — hand the customer a click-to-chat
+    # link that opens their own WhatsApp with a message already written.
     detail = getattr(staff, "staff_detail", None)
-    if detail and detail.whatsapp:
-        notify.send_whatsapp(
-            to=detail.whatsapp,
-            template="booking_request",
-            params=[
-                user.full_name or "A customer",
-                service.name,
-                data["when"],
-            ],
-        )
+    data["whatsapp_link"] = notify.whatsapp_link(
+        to=detail.whatsapp if detail else None,
+        text=(
+            f"Hi {staff.full_name}! I just booked {service.name} for {data['when']}. "
+            "Is that all good on your side?"
+        ),
+    )
     return Response(data, status=201)
 
 
@@ -195,13 +194,16 @@ def _answer(request, booking_id, action: str):
         status=new_status,
     )
     if action in {"confirm", "decline"}:
-        detail = getattr(booking.staff, "staff_detail", None)
-        if detail and detail.whatsapp and action == "confirm":
-            notify.send_whatsapp(
-                to=detail.whatsapp,
-                template="booking_confirmation",
-                params=[booking.customer.full_name or "A customer", booking.service.name, data["when"]],
-            )
+        # Wa.me link so the salon can continue the conversation in WhatsApp
+        # with the booking details pre-written.
+        spoken = {"confirm": "confirmed", "decline": "declined"}[action]
+        data["whatsapp_link"] = notify.whatsapp_link(
+            to=booking.customer.phone,
+            text=(
+                f"Hi {booking.customer.full_name or 'there'}! Your {booking.service.name} "
+                f"on {data['when']} is {spoken}. Reply here if you need anything."
+            ),
+        )
     return Response(data)
 
 

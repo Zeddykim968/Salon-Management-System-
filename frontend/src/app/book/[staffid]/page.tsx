@@ -8,6 +8,15 @@ import StatusBadge from "@/components/StatusBadge";
 import { ApiError, api, kes } from "@/lib/api";
 import { hasSession } from "@/lib/auth";
 import type { Availability, Booking, Service } from "@/lib/types";
+import { motion, type Variants } from "framer-motion";
+
+import { EASE, Magnetic, Reveal, Stagger } from "@/components/motion";
+
+/** Slots cascade in and bounce when picked. */
+const SLOT_VARIANTS: Variants = {
+  hidden: { opacity: 0, y: 14, scale: 0.9 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, ease: EASE } },
+};
 
 function isoDay(date: Date) {
   const tz = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
@@ -180,7 +189,7 @@ function BookInner() {
         ← Back to hairstyles
       </Link>
 
-      <div className="page-head" style={{ marginTop: 14 }}>
+      <Reveal className="page-head" style={{ marginTop: 14 }}>
         <div className="row" style={{ alignItems: "center" }}>
           <span className="avatar lg">
             {staff?.avatar_url ? (
@@ -197,7 +206,7 @@ function BookInner() {
             {staff ? <StatusBadge status={staff.status} /> : null}
           </div>
         </div>
-      </div>
+      </Reveal>
 
       {error ? <div className="alert error">{error}</div> : null}
 
@@ -253,20 +262,23 @@ function BookInner() {
             <span className="spinner" />
           </div>
         ) : availability && availability.slots.length > 0 ? (
-          <div className="slots" style={{ marginTop: 14 }}>
+          <Stagger className="slots" style={{ marginTop: 14 }} gap={0.035}>
             {availability.slots.map((slot) => (
-              <button
+              <motion.button
                 key={slot.start}
                 className={`slot${selected === slot.start ? " selected" : ""}`}
                 onClick={() => setSelected(slot.start)}
+                variants={SLOT_VARIANTS}
+                whileHover={{ y: -4 }}
+                whileTap={{ scale: 0.93 }}
               >
                 {new Date(slot.start).toLocaleTimeString([], {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
-              </button>
+              </motion.button>
             ))}
-          </div>
+          </Stagger>
         ) : (
           <div className="empty" style={{ marginTop: 14 }}>
             No free slots on this day — try another date or a different
@@ -300,13 +312,15 @@ function BookInner() {
               "Pick a service and a slot"
             )}
           </div>
-          <button
-            className="btn btn-primary"
-            disabled={!selected || submitting || !serviceId}
-            onClick={() => void submit()}
-          >
-            {submitting ? "Holding slot…" : "Request this slot"}
-          </button>
+          <Magnetic strength={0.4}>
+            <button
+              className="btn btn-primary"
+              disabled={!selected || submitting || !serviceId}
+              onClick={() => void submit()}
+            >
+              {submitting ? "Holding slot…" : "Request this slot"}
+            </button>
+          </Magnetic>
         </div>
         <p className="small muted" style={{ marginTop: 10 }}>
           The slot is held as <b>pending</b> the moment you submit — the

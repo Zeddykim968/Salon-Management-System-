@@ -1,7 +1,17 @@
 import type { Metadata, Viewport } from "next";
 
+import MotionShell from "@/components/MotionShell";
 import Nav from "@/components/Nav";
+import { Magnetic } from "@/components/motion";
 import "./globals.css";
+
+// Public salon number for the footer's click-to-chat button (digits only).
+const WHATSAPP_PHONE = (process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "").replace(/\D/g, "");
+const WHATSAPP_HREF = WHATSAPP_PHONE
+  ? `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(
+      "Hi! I'd like to book an appointment 💇‍♀️"
+    )}`
+  : null;
 
 export const metadata: Metadata = {
   title: {
@@ -34,19 +44,33 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
       <body>
-        <Nav />
-        <main>{children}</main>
-        <footer className="footer">
-          <div className="container row between">
-            <div>
-              <strong style={{ color: "var(--pink)" }}>SALON ✨</strong> — student
-              friendly, walk in glowing.
+        <MotionShell>
+          <Nav />
+          <main>{children}</main>
+          <footer className="footer">
+            <div className="container row between">
+              <div>
+                <strong style={{ color: "var(--pink)" }}>SALON ✨</strong> — student
+                friendly, walk in glowing.
+              </div>
+              <div className="small">
+                Prices in KSh · WhatsApp-first · © {new Date().getFullYear()}
+              </div>
+              {WHATSAPP_HREF ? (
+                <Magnetic strength={0.35}>
+                  <a
+                    className="btn btn-ghost btn-sm wa-btn"
+                    href={WHATSAPP_HREF}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Chat on WhatsApp 💬
+                  </a>
+                </Magnetic>
+              ) : null}
             </div>
-            <div className="small">
-              Prices in KSh · WhatsApp-first · © {new Date().getFullYear()}
-            </div>
-          </div>
-        </footer>
+          </footer>
+        </MotionShell>
       </body>
     </html>
   );

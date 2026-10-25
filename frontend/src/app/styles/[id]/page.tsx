@@ -9,6 +9,8 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import { api, kes } from "@/lib/api";
 import type { Service, StaffCard } from "@/lib/types";
 
+import { Item, Magnetic, Reveal, Stagger } from "@/components/motion";
+
 export default function StylePage() {
   const params = useParams<{ id: string }>();
   const serviceId = params.id;
@@ -48,7 +50,7 @@ export default function StylePage() {
         ← All styles
       </Link>
 
-      <div className="page-head" style={{ marginTop: 14 }}>
+      <Reveal className="page-head" style={{ marginTop: 14 }}>
         <div>
           <div className="row tight">
             {service ? (
@@ -66,15 +68,17 @@ export default function StylePage() {
           ) : null}
         </div>
         {service ? (
-          <Link
-            href={`/book/${staff[0]?.id ?? ""}?service=${service.id}`}
-            className="btn btn-primary"
-            style={staff.length === 0 ? { pointerEvents: "none", opacity: 0.5 } : undefined}
-          >
-            Book this style →
-          </Link>
+          <Magnetic strength={0.4}>
+            <Link
+              href={`/book/${staff[0]?.id ?? ""}?service=${service.id}`}
+              className="btn btn-primary"
+              style={staff.length === 0 ? { pointerEvents: "none", opacity: 0.5 } : undefined}
+            >
+              Book this style →
+            </Link>
+          </Magnetic>
         ) : null}
-      </div>
+      </Reveal>
 
       {error ? <div className="alert error">{error}</div> : null}
 
@@ -86,9 +90,9 @@ export default function StylePage() {
         from working hours minus confirmed bookings.
       </p>
 
-      <div className="grid grid-3" style={{ marginTop: 18 }}>
+      <Stagger className="grid grid-3" style={{ marginTop: 18 }}>
         {staff.map((stylist) => (
-          <div key={stylist.id} className="card hover">
+          <Item key={stylist.id} className="card hover">
             <div className="row" style={{ alignItems: "flex-start" }}>
               <span className="avatar lg">
                 {stylist.avatar_url ? (
@@ -151,9 +155,9 @@ export default function StylePage() {
                 }) — any slots open?`}
               />
             </div>
-          </div>
+          </Item>
         ))}
-      </div>
+      </Stagger>
 
       {!loading && staff.length === 0 && !error ? (
         <div className="empty" style={{ marginTop: 16 }}>

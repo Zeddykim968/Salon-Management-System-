@@ -1,13 +1,19 @@
-"""Messaging integrations: Resend (email) + WhatsApp Cloud API.
+"""Messaging integrations: Brevo (email) + wa.me click-to-chat (WhatsApp).
 
-Both are optional in development — with no credentials every send is logged
+Email is optional in development — with no BREVO_API_KEY every send is logged
 instead of sent, so the app never breaks while you are wiring keys.
+
+WhatsApp is deliberately *not* an API call: `whatsapp_link()` only builds a
+`https://wa.me/<number>?text=…` URL that opens the recipient's own WhatsApp with
+the message pre-filled. Nothing is sent from the server, so there is no token,
+no Meta app review and no approved-template requirement.
 """
 from __future__ import annotations
 
 import logging
 import re
 from html import escape
+from urllib.parse import quote
 
 import requests
 
@@ -15,16 +21,7 @@ from .config_helpers import frontend_origin
 
 log = logging.getLogger("api.notify")
 
-RESEND_URL = "https://api.resend.com/emails"
-GRAPH_URL = "https://graph.facebook.com/v21.0"
-
-# Approved Meta template names (create these in Business Manager).
-TEMPLATES = {
-    "booking_request": "booking_request",
-    "booking_confirmation": "booking_confirmation",
-    "booking_reminder": "booking_reminder",
-    "promotion": "promotion",
-}
+BREVO_URL = "https://api.brevo.com/v3/smtp/email"
 
 
 def _settings():
@@ -34,16 +31,16 @@ def _settings():
 
 
 def send_email(*, to: str, subject: str, html: str, text: str | None = None) -> bool:
-    """Send one email through Resend. Returns True when accepted."""
+    """Send one email through Brevo's SMTP v3 API. Returns True when accepted."""
     if not to:
         return False
     settings = _settings()
-    if not settings.RESEND_API_KEY:
+    if not settings.BREVO_API_KEY:
         # Development fallback: surface the CTA link so verify/reset/invite
-        # flows stay testable without a Resend key.
+        # flows stay testable without a Brevo key.
         link = _first_link(html)
         log.info(
-            "[email:skipped — no RESEND_API_KEY] to=%s subject=%s%s",
+            "[email:skipped — no BREVO_API_KEY] to=%s subject=%s%s",
             to,
             subject,
             f" link={link}" if link else "",
@@ -51,71 +48,46 @@ def send_email(*, to: str, subject: str, html: str, text: str | None = None) -> 
         return False
     try:
         response = requests.post(
-            RESEND_URL,
-            headers={"Authorization": f"Bearer {settings.RESEND_API_KEY}"},
-            json={
-                "from": settings.EMAIL_FROM,
-                "to": [to],
-                "subject": subject,
-                "html": html,
-                **({"text": text} if text else {}),
-            },
-            timeout=15,
-        )
-        if response.status_code >= 400:
-            log.error("Resend rejected send (%s): %s", response.status_code, response.text[:300])
-            return False
-        return True
-    except requests.RequestException as exc:
-        log.error("Resend unreachable: %s", exc)
-        return False
-
-
-def send_whatsapp(*, to: str, template: str, params: list[str] | None = None) -> bool:
-    """Send an approved template message through the WhatsApp Cloud API."""
-    settings = _settings()
-    to = "".join(ch for ch in str(to or "") if ch.isdigit())
-    if not to:
-        return False
-    if not settings.WHATSAPP_TOKEN or not settings.WHATSAPP_PHONE_NUMBER_ID:
-        log.info("[whatsapp:skipped — no token] to=%s template=%s params=%s", to, template, params)
-        return False
-
-    components = []
-    if params:
-        components.append(
-            {
-                "type": "body",
-                "parameters": [{"type": "text", "text": str(p)} for p in params],
-            }
-        )
-    payload = {
-        "messaging_product": "whatsapp",
-        "to": to,
-        "type": "template",
-        "template": {
-            "name": TEMPLATES.get(template, template),
-            "language": {"code": "en"},
-            **({"components": components} if components else {}),
-        },
-    }
-    try:
-        response = requests.post(
-            f"{GRAPH_URL}/{settings.WHATSAPP_PHONE_NUMBER_ID}/messages",
+            BREVO_URL,
             headers={
-                "Authorization": f"Bearer {settings.WHATSAPP_TOKEN}",
+                "api-key": settings.BREVO_API_KEY,
+                "accept": "application/json",
                 "Content-Type": "application/json",
             },
-            json=payload,
+            json={
+                "sender": {
+                    "name": settings.EMAIL_FROM_NAME,
+                    "email": settings.EMAIL_FROM_ADDRESS,
+                },
+                "to": [{"email": to}],
+                "subject": subject,
+                "htmlContent": html,
+                **({"textContent": text} if text else {}),
+            },
             timeout=15,
         )
         if response.status_code >= 400:
-            log.error("WhatsApp rejected send (%s): %s", response.status_code, response.text[:300])
+            log.error("Brevo rejected send (%s): %s", response.status_code, response.text[:300])
             return False
         return True
     except requests.RequestException as exc:
-        log.error("WhatsApp API unreachable: %s", exc)
+        log.error("Brevo unreachable: %s", exc)
         return False
+
+
+def whatsapp_link(*, to: str | None, text: str) -> str | None:
+    """Build a wa.me click-to-chat URL with `text` pre-filled.
+
+    Returns None when there is no usable number — callers treat that as
+    "nothing to show", which is the WhatsApp equivalent of a skipped send.
+    """
+    digits = "".join(ch for ch in str(to or "") if ch.isdigit())
+    if not digits:
+        return None
+    if len(digits) < 7:
+        log.warning("whatsapp_link ignored — number too short: %r", to)
+        return None
+    return f"https://wa.me/{digits}?text={quote(str(text))}"
 
 
 # ---------------------------------------------------------------------------

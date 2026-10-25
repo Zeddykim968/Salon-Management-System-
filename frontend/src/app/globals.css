@@ -99,18 +99,69 @@ p { margin: 0 0 12px; }
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  display: inline-block;
 }
 .nav-links { display: flex; gap: 6px; align-items: center; margin-left: auto; }
 .nav-link {
+  position: relative;
+  isolation: isolate;
   padding: 8px 13px;
   border-radius: 999px;
   font-weight: 650;
   font-size: 0.92rem;
   color: var(--muted);
-  transition: 0.15s;
+  transition: color 0.18s ease;
 }
-.nav-link:hover { color: var(--text); background: var(--card-2); }
-.nav-link.active { color: var(--bg); background: var(--lime); }
+.nav-link:hover { color: var(--text); }
+.nav-link.active { color: #ffffff; }
+/* the sliding pill that travels between active links */
+.nav-pill {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--pink), var(--violet));
+  z-index: -1;
+  box-shadow: 0 8px 20px rgba(236, 61, 149, 0.35);
+}
+.nav-burger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  width: 42px;
+  height: 42px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--card);
+  cursor: pointer;
+  margin-left: auto;
+}
+.nav-burger span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--text);
+}
+.mobile-panel {
+  position: absolute;
+  left: 4vw;
+  right: 4vw;
+  top: calc(100% + 8px);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transform-origin: top right;
+  overflow: hidden;
+}
+.mobile-panel .nav-link { padding: 12px 14px; font-size: 1rem; }
+.mobile-panel .nav-link.active { background: linear-gradient(90deg, var(--pink), var(--violet)); }
 
 /* ---------- buttons ---------- */
 .btn {
@@ -135,6 +186,9 @@ p { margin: 0 0 12px; }
 .btn-lime { background: var(--lime); color: #ffffff; }
 .btn-ghost { background: transparent; border-color: var(--line); color: var(--text); }
 .btn-danger { background: rgba(255, 92, 108, 0.14); border-color: rgba(255, 92, 108, 0.5); color: var(--bad); }
+/* WhatsApp click-to-chat — theme-aware green so it reads on pink *and* purple */
+.wa-btn { border-color: color-mix(in srgb, var(--ok) 55%, transparent); color: var(--ok); }
+.wa-btn:hover { background: color-mix(in srgb, var(--ok) 12%, transparent); }
 .btn-sm { padding: 8px 14px; font-size: 0.85rem; }
 .btn-block { width: 100%; }
 
@@ -220,6 +274,107 @@ p { margin: 0 0 12px; }
   pointer-events: none;
 }
 .hero-img { border-radius: 20px; max-height: 380px; object-fit: cover; width: 100%; }
+
+/* two-column hero: copy left, floating photo right */
+.hero-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 52px);
+  align-items: center;
+}
+.hero-side { position: relative; }
+.hero-photo-wrap { border-radius: 22px; }
+.hero-placeholder {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  font-size: 2.4rem;
+  background: linear-gradient(135deg, rgba(255, 79, 163, 0.22), rgba(139, 92, 255, 0.2));
+  border: 1px dashed var(--pink);
+  border-radius: 20px;
+}
+.hero-badge {
+  position: absolute;
+  left: -14px;
+  bottom: -16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  box-shadow: var(--shadow);
+}
+.hero-stats { margin-top: 30px; gap: 22px; }
+.hero-stat { display: flex; flex-direction: column; }
+.hero-stat strong {
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  font-weight: 900;
+  line-height: 1;
+  background: linear-gradient(90deg, var(--pink), var(--violet));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.hero-stat span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 5px;
+}
+.ticker-band { margin-top: 34px; }
+.ticker-band .chip { white-space: nowrap; }
+
+/* service rows slide an arrow out on hover */
+.service-card { position: relative; overflow: hidden; }
+.service-go {
+  position: absolute;
+  right: 16px;
+  bottom: 10px;
+  opacity: 0;
+  transform: translateX(-10px);
+  color: var(--pink);
+  font-weight: 900;
+  transition: 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.service-card:hover .service-go { opacity: 1; transform: translateX(0); }
+
+/* draggable carousel cards */
+.crew-card {
+  width: min(330px, 76vw);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px;
+  transition: border-color 0.2s ease, box-shadow 0.3s ease;
+  user-select: none;
+}
+.crew-card:hover { border-color: var(--pink); box-shadow: var(--shadow); }
+.crew-thumb {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  pointer-events: none;
+}
+.gallery-card {
+  position: relative;
+  margin: 0;
+  width: min(260px, 62vw);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--card);
+  user-select: none;
+}
+.gallery-card img { width: 100%; height: 300px; object-fit: cover; pointer-events: none; }
+.gallery-card .photo-cap { position: absolute; }
 
 /* ---------- forms ---------- */
 .label { display: block; font-size: 0.8rem; font-weight: 750; color: var(--muted); margin: 14px 0 6px; text-transform: uppercase; letter-spacing: 0.06em; }
@@ -362,12 +517,149 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; }
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
   .masonry { columns: 2; }
+  .hero-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 640px) {
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   .masonry { columns: 1; }
   .field-row { grid-template-columns: 1fr; }
-  .nav-inner { height: auto; padding: 10px 0; flex-wrap: wrap; }
-  .nav-links { margin-left: 0; width: 100%; overflow-x: auto; }
+  .nav-inner { height: 58px; }
+  .nav-links { display: none; }
+  .nav-burger { display: flex; }
+  .nav { position: sticky; }
   .section { padding: 38px 0; }
+  .drag-btn { width: 38px; height: 38px; }
 }
+
+/* ==========================================================================
+   MOTION — drag carousels, tilting cards, magnetic buttons
+   ========================================================================== */
+.magnetic { display: inline-flex; will-change: transform; }
+.tilt { transform-style: preserve-3d; will-change: transform; }
+
+.drag { position: relative; }
+.drag-viewport { overflow: hidden; }
+.drag-track {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  cursor: grab;
+  padding: 6px 2px 12px;
+  touch-action: pan-y pinch-zoom;
+}
+.drag-track:active { cursor: grabbing; }
+.drag-track > * { flex: 0 0 auto; }
+.drag-nav { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }
+.drag-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+.drag-btn:hover:not(:disabled) { border-color: var(--pink); color: var(--pink); transform: scale(1.09); }
+.drag-btn:active:not(:disabled) { transform: scale(0.92); }
+.drag-btn:disabled { opacity: 0.32; cursor: default; }
+
+/* photo tiles zoom & brighten under the pointer */
+.zoomable { overflow: hidden; border-radius: 16px; }
+.zoomable img { transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s; }
+.zoomable:hover img { transform: scale(1.07); filter: saturate(1.15); }
+
+/* highlighted headline that wipes in left-to-right */
+.hero h1 .wipe span {
+  background-image: linear-gradient(90deg, var(--pink), var(--violet));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  background-size: 100% 100%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hero h1 .wipe span {
+    background-size: 0% 100%;
+    animation: wipe-in 1.2s 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  @keyframes wipe-in { to { background-size: 100% 100%; } }
+}
+
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.marquee { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.marquee-track { display: flex; gap: 14px; width: max-content; animation: marquee 26s linear infinite; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   EVERY PAGE — entrance + the small lifts that make components feel alive
+   ========================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  /* each page drifts up into place on entry (all 18 routes, one rule) */
+  .container.page { animation: page-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  @keyframes page-in {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: none; }
+  }
+  /* chat bubbles pop in as they arrive */
+  .msg { animation: msg-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) both; }
+  @keyframes msg-in {
+    from { opacity: 0; transform: translateY(8px) scale(0.97); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+/* list rows, stat tiles and photo tiles respond to the pointer */
+.list-item,
+.stat {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.22s ease, box-shadow 0.3s ease;
+}
+.list-item:hover,
+.stat:hover { transform: translateY(-3px); border-color: var(--pink); box-shadow: var(--shadow); }
+.stat:hover .num { transform: scale(1.06); }
+.stat .num { display: inline-block; transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+
+.masonry > a,
+.masonry > div { transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease; }
+.masonry > a:hover,
+.masonry > div:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.masonry img { transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s; }
+.masonry > a:hover img,
+.masonry > div:hover img { transform: scale(1.06); filter: saturate(1.15); }
+
+/* slots bounce under the finger and settle when picked */
+.slot {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    background 0.18s ease, border-color 0.18s ease, box-shadow 0.25s ease;
+}
+.slot:hover { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(236, 61, 149, 0.16); }
+.slot:active { transform: scale(0.95); }
+.slot.selected { animation: slot-pop 0.34s cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes slot-pop { 40% { transform: scale(1.06); } }
+
+/* tabs slide their colour across; contacts nudge into place */
+.tab { transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s, color 0.2s, border-color 0.2s; }
+.tab:hover { transform: translateY(-2px); border-color: var(--pink); }
+.tab:active { transform: scale(0.96); }
+.tab.active { animation: slot-pop 0.34s cubic-bezier(0.16, 1, 0.3, 1); }
+.contact-item { transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.18s, border-color 0.18s; }
+.contact-item:hover { transform: translateX(5px); }
+
+/* form fields lift when focused */
+.input, .textarea, .select { transition: border 0.15s, box-shadow 0.2s, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.input:hover, .textarea:hover, .select:hover { transform: translateY(-1px); }
+
+/* the photo grids in admin/staff galleries zoom like the home carousel */
+.card.hover:hover .avatar { transform: rotate(-6deg) scale(1.06); }
+.avatar { transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }

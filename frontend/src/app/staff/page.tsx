@@ -8,6 +8,8 @@ import WhatsAppButton from "@/components/WhatsAppButton";
 import { ApiError, api, kes } from "@/lib/api";
 import type { Booking, Me, StaffStatus } from "@/lib/types";
 
+import { Item, Magnetic, Reveal, Stagger } from "@/components/motion";
+
 const STATUSES: StaffStatus[] = ["available", "busy", "off"];
 
 export default function StaffHomePage() {
@@ -92,7 +94,7 @@ export default function StaffHomePage() {
 
   return (
     <div className="container page">
-      <div className="page-head">
+      <Reveal className="page-head">
         <div>
           <div className="kicker" style={{ color: "var(--lime)", letterSpacing: "0.18em", fontSize: "0.75rem", fontWeight: 850, textTransform: "uppercase" }}>
             Studio · {me?.role === "nail_tech" ? "Nail tech" : "Stylist"}
@@ -102,10 +104,14 @@ export default function StaffHomePage() {
           </h1>
         </div>
         <div className="row tight">
-          <Link href="/staff/profile" className="btn btn-ghost btn-sm">Profile</Link>
-          <Link href="/staff/gallery" className="btn btn-ghost btn-sm">Gallery</Link>
+          <Magnetic strength={0.3}>
+            <Link href="/staff/profile" className="btn btn-ghost btn-sm">Profile</Link>
+          </Magnetic>
+          <Magnetic strength={0.3}>
+            <Link href="/staff/gallery" className="btn btn-ghost btn-sm">Gallery</Link>
+          </Magnetic>
         </div>
-      </div>
+      </Reveal>
 
       {error ? <div className="alert error">{error}</div> : null}
       {notice ? <div className="alert success">{notice}</div> : null}
@@ -155,9 +161,9 @@ export default function StaffHomePage() {
         {pending.length === 0 ? (
           <div className="empty">No pending requests — nice. 🎉</div>
         ) : (
-          <div className="list">
+          <Stagger className="list">
             {pending.map((booking) => (
-              <div key={booking.id} className="list-item">
+              <Item key={booking.id} className="list-item">
                 <span className="avatar">
                   {booking.customer.full_name?.slice(0, 1).toUpperCase() || "?"}
                 </span>
@@ -193,9 +199,9 @@ export default function StaffHomePage() {
                     Decline
                   </button>
                 </div>
-              </div>
+              </Item>
             ))}
-          </div>
+          </Stagger>
         )}
       </section>
 

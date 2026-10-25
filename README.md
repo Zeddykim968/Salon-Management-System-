@@ -98,7 +98,7 @@ The API lives at the root (no `/api` prefix): `/health`, `/services`, `/stylists
 exact paths, so don't change the prefix.
 
 ### 3.3 Frontend (Next.js)
-
+   
 In a second terminal:
 
 ```bash

@@ -26,11 +26,18 @@ if (existsSync(rootEnvPath)) {
 // A real env var (e.g. set in Render's dashboard) wins over the file.
 const publicApiUrl =
   process.env.NEXT_PUBLIC_API_URL || rootEnv.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const publicWhatsappPhone =
+  (process.env.NEXT_PUBLIC_WHATSAPP_PHONE || rootEnv.NEXT_PUBLIC_WHATSAPP_PHONE || "").replace(
+    /\D/g,
+    ""
+  );
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   env: {
     NEXT_PUBLIC_API_URL: publicApiUrl,
+    // salon's public number — the footer's wa.me button uses it
+    NEXT_PUBLIC_WHATSAPP_PHONE: publicWhatsappPhone,
   },
   images: {
     remotePatterns: [

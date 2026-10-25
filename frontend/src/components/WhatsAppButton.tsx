@@ -1,5 +1,7 @@
 import { waLink } from "@/lib/api";
 
+import { Magnetic } from "./motion";
+
 export default function WhatsAppButton({
   number,
   text,
@@ -16,14 +18,15 @@ export default function WhatsAppButton({
   const digits = (number || "").replace(/\D/g, "");
   if (!digits) return null;
   return (
-    <a
-      className={`btn ${size === "sm" ? "btn-sm " : ""}btn-ghost ${className}`}
-      href={waLink(digits, text)}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{ borderColor: "rgba(61,220,132,.55)", color: "#6ef0a9" }}
-    >
-      {label} 💬
-    </a>
+    <Magnetic strength={0.35} className={className}>
+      <a
+        className={`btn ${size === "sm" ? "btn-sm " : ""}btn-ghost wa-btn`}
+        href={waLink(digits, text)}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {label} 💬
+      </a>
+    </Magnetic>
   );
 }

@@ -17,6 +17,7 @@ export default function AdminCampaignsPage() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
+  const [links, setLinks] = useState<{ name: string; url: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -36,19 +37,33 @@ export default function AdminCampaignsPage() {
 
   async function send(event: React.FormEvent) {
     event.preventDefault();
-    if (!window.confirm(`Send this offer by ${channel} to ${audience.replace("_", " ")}?`)) return;
+    const verb = channel === "email" ? "Send" : "Prepare";
+    if (!window.confirm(`${verb} this offer by ${channel} to ${audience.replace("_", " ")}?`)) return;
     setSending(true);
     setError(null);
     setResult(null);
+    setLinks([]);
     try {
-      const response = await api<{ attempted: number; sent: number }>("/admin/campaigns", {
+      const response = await api<{
+        attempted: number;
+        sent: number;
+        links?: { name: string; url: string }[];
+      }>("/admin/campaigns", {
         json: { channel, audience, subject: subject.trim() || null, body },
       });
-      setResult(
-        channel === "email"
-          ? `Emails sent: ${response.sent}/${response.attempted} (unconfigured keys are logged, not sent).`
-          : `WhatsApp template messages sent: ${response.sent}/${response.attempted} — the \"promotion\" template must be approved in Meta Business Manager.`
-      );
+      if (channel === "email") {
+        setResult(
+          `Emails sent: ${response.sent}/${response.attempted} (until a Brevo key is set they are logged, not sent).`
+        );
+      } else {
+        const prepared = response.links ?? [];
+        setLinks(prepared);
+        setResult(
+          prepared.length === 0
+            ? "Nobody in this audience has a phone number saved."
+            : `${prepared.length} WhatsApp chats prepared — tap a name to open WhatsApp with the message already written.`
+        );
+      }
       setSubject("");
       setBody("");
       await load();
@@ -65,8 +80,9 @@ export default function AdminCampaignsPage() {
         <div>
           <h1 style={{ fontSize: "clamp(1.8rem, 4vw, 2.5rem)" }}>Offers & campaigns</h1>
           <p className="muted">
-            Email goes through Resend; WhatsApp uses an approved template. Only
-            marketing opt-in customers receive promos.
+            Email goes through Brevo; WhatsApp opens a wa.me chat with the
+            message pre-written — nothing is sent from a server. Only marketing
+            opt-in customers receive promos.
           </p>
         </div>
       </div>
@@ -74,13 +90,36 @@ export default function AdminCampaignsPage() {
       {error ? <div className="alert error">{error}</div> : null}
       {result ? <div className="alert success">{result}</div> : null}
 
+      {links.length > 0 ? (
+        <div className="card" style={{ marginBottom: 30 }}>
+          <strong>Open these chats</strong>
+          <div className="list" style={{ marginTop: 12 }}>
+            {links.map((link) => (
+              <a
+                key={link.url}
+                className="list-item wa-link-row"
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ padding: "11px 15px" }}
+              >
+                <span className="grow">{link.name}</span>
+                <span className="small" style={{ color: "var(--ok)" }}>
+                  Open WhatsApp →
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <form className="card" onSubmit={send} style={{ marginBottom: 30 }}>
         <div className="field-row">
           <div>
             <span className="label">Channel</span>
             <select className="select" value={channel} onChange={(event) => setChannel(event.target.value as Channel)}>
-              <option value="email">Email (Resend)</option>
-              <option value="whatsapp">WhatsApp (Cloud API template)</option>
+              <option value="email">Email (Brevo)</option>
+              <option value="whatsapp">WhatsApp (wa.me links)</option>
             </select>
           </div>
           <div>
@@ -113,8 +152,12 @@ export default function AdminCampaignsPage() {
 
         <div className="row between" style={{ marginTop: 16 }}>
           <span className="small muted">{body.length}/5000</span>
-          <button className="btn btn-primary" type="submit" disabled={sending || !body.trim()}>
-            {sending ? "Sending…" : `Send by ${channel === "email" ? "email" : "WhatsApp"}`}
+ <button className="btn btn-primary" type="submit" disabled={sending || !body.trim()}>
+            {sending
+              ? "Working…"
+              : channel === "email"
+                ? "Send by email"
+                : "Prepare WhatsApp chats"}
           </button>
         </div>
       </form>

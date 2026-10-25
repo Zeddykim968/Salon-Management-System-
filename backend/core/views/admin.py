@@ -248,6 +248,7 @@ def campaigns(request):
         recipients = recipients.filter(role__in=Role.staff_roles())
 
     attempted = sent = 0
+    links: list[dict[str, str]] = []
     for person in recipients:
         attempted += 1
         if channel == "email":
@@ -255,11 +256,20 @@ def campaigns(request):
                 to=person.email, subject=subject or "An offer from the salon", body=body
             )
         else:
+            # No WhatsApp API: build a click-to-chat link per recipient so the
+            # admin can open each conversation with the offer pre-written.
             detail = getattr(person, "staff_detail", None)
-            number = detail.whatsapp if detail else None
-            if not number:
+            number = person.phone or (detail.whatsapp if detail else None)
+            url = notify.whatsapp_link(to=number, text=body)
+            if not url:
                 continue
-            ok = notify.send_whatsapp(to=number, template="promotion", params=[body])
+            ok = True
+            links.append(
+                {
+                    "name": person.full_name or person.email,
+                    "url": url,
+                }
+            )
         if ok:
             sent += 1
 
@@ -272,4 +282,7 @@ def campaigns(request):
         sent_at=timezone.now(),
     )
     log_activity(admin, "campaign.send", {"channel": channel, "audience": audience, "sent": sent})
-    return Response({"attempted": attempted, "sent": sent, "id": str(campaign.id)}, status=201)
+    return Response(
+        {"attempted": attempted, "sent": sent, "id": str(campaign.id), "links": links},
+        status=201,
+    )

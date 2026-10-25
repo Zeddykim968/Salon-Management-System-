@@ -6,6 +6,8 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { ActivityItem, Booking, Me } from "@/lib/types";
 
+import { Item, Magnetic, Reveal, Stagger } from "@/components/motion";
+
 interface Overview {
   customers: number;
   staff: number;
@@ -58,17 +60,19 @@ export default function AdminOverviewPage() {
 
   return (
     <div className="container page" style={{ paddingTop: 8 }}>
-      <div className="page-head">
+      <Reveal className="page-head">
         <div>
           <h1 style={{ fontSize: "clamp(1.8rem, 4vw, 2.5rem)" }}>
             Welcome, {me?.full_name?.split(" ")[0] || "admin"}
           </h1>
           <p className="muted">Everything happening in the salon, live.</p>
         </div>
-        <Link href="/admin/staff" className="btn btn-primary">
-          + Invite staff
-        </Link>
-      </div>
+        <Magnetic strength={0.35}>
+          <Link href="/admin/staff" className="btn btn-primary">
+            + Invite staff
+          </Link>
+        </Magnetic>
+      </Reveal>
 
       {error ? (
         <div className="alert error">
@@ -82,14 +86,14 @@ export default function AdminOverviewPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-4" style={{ marginBottom: 30 }}>
+          <Stagger className="grid grid-4" style={{ marginBottom: 30 }}>
             {stats.map((stat) => (
-              <div key={stat.cap} className="stat">
+              <Item key={stat.cap} className="stat">
                 <div className="num">{stat.num}</div>
                 <div className="cap">{stat.cap}</div>
-              </div>
+              </Item>
             ))}
-          </div>
+          </Stagger>
 
           <div className="grid" style={{ gridTemplateColumns: "1fr" }}>
             <section>

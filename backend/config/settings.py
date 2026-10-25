@@ -7,6 +7,7 @@ from datetime import timedelta
 from pathlib import Path
 from urllib.parse import parse_qsl, unquote, urlparse
 import os
+import re
 
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
@@ -183,11 +184,24 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ---------------------------------------------------------------------------
 # Integrations (all optional locally — each one logs instead of sending)
+#
+# Email goes through Brevo's SMTP v3 API. WhatsApp has NO server-side API:
+# the app builds wa.me click-to-chat links that open the user's own WhatsApp,
+# so there is no token, no template approval and nothing to verify with Meta.
 # ---------------------------------------------------------------------------
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
+BREVO_API_KEY = os.getenv("BREVO_API_KEY", "").strip()
 EMAIL_FROM = os.getenv("EMAIL_FROM", "Salon <hello@localhost>")
-WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN", "").strip()
-WHATSAPP_PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "").strip()
+
+
+def _split_sender(value: str) -> tuple[str, str]:
+    """'Salon <hello@x.com>' -> ('Salon', 'hello@x.com')."""
+    match = re.match(r"^\s*(.*?)\s*<([^>]+)>\s*$", value or "")
+    if match:
+        return (match.group(1).strip() or "Salon"), match.group(2).strip()
+    return "Salon", (value or "").strip()
+
+
+EMAIL_FROM_NAME, EMAIL_FROM_ADDRESS = _split_sender(EMAIL_FROM)
 CLOUDINARY_URL = os.getenv("CLOUDINARY_URL", "").strip()
 
 if CLOUDINARY_URL:

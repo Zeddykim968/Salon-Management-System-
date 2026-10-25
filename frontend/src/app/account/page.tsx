@@ -8,6 +8,8 @@ import StatusBadge from "@/components/StatusBadge";
 import { ApiError, api, kes } from "@/lib/api";
 import type { Booking, Contact, Me } from "@/lib/types";
 
+import { Item, Magnetic, Reveal, Stagger } from "@/components/motion";
+
 type Tab = "bookings" | "messages";
 
 export default function AccountPage() {
@@ -85,7 +87,7 @@ export default function AccountPage() {
 
   return (
     <div className="container page">
-      <div className="page-head">
+      <Reveal className="page-head">
         <div>
           <div className="kicker" style={{ color: "var(--lime)", letterSpacing: "0.18em", fontSize: "0.75rem", fontWeight: 850, textTransform: "uppercase" }}>
             My account
@@ -94,10 +96,12 @@ export default function AccountPage() {
             Hey {me?.full_name?.split(" ")[0] || "there"} 👋
           </h1>
         </div>
-        <Link href="/#services" className="btn btn-lime">
-          + Book a style
-        </Link>
-      </div>
+        <Magnetic strength={0.35}>
+          <Link href="/#services" className="btn btn-lime">
+            + Book a style
+          </Link>
+        </Magnetic>
+      </Reveal>
 
       <div className="tabs">
         {isCustomer ? (
@@ -128,9 +132,9 @@ export default function AccountPage() {
               </Link>
             </div>
           ) : (
-            <div className="list">
+            <Stagger className="list">
               {bookings.map((booking) => (
-                <div key={booking.id} className="list-item">
+                <Item key={booking.id} className="list-item">
                   <div className="grow">
                     <div className="row tight">
                       <strong>{booking.service.name}</strong>
@@ -155,12 +159,12 @@ export default function AccountPage() {
                       </button>
                     ) : null}
                   </div>
-                </div>
+                </Item>
               ))}
               <button className="btn btn-ghost btn-sm" onClick={() => void refreshBookings()}>
                 ↻ Refresh
               </button>
-            </div>
+            </Stagger>
           )
         ) : (
           <div className="empty">
