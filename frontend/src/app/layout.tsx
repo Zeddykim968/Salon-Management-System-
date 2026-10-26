@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from "next";
 import MotionShell from "@/components/MotionShell";
 import Nav from "@/components/Nav";
 import { Magnetic } from "@/components/motion";
-import "./globals.css";
+
 
 // Public salon number for the footer's click-to-chat button (digits only).
 const WHATSAPP_PHONE = (process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "").replace(/\D/g, "");
