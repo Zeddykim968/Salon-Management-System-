@@ -4,6 +4,7 @@ import { motion, useScroll, useTransform } from "framer-motion";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+
 import StatusBadge from "@/components/StatusBadge";
 import WhatsAppButton from "@/components/WhatsAppButton";
 import {

@@ -4,7 +4,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
-admin.site.site_header = "Salon Platform administration"
+admin.site.site_header = "The Prince Beauty Parlour administration"
 admin.site.site_title = "Salon admin"
 admin.site.index_title = "Staff, bookings and content"
 

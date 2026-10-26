@@ -1,11 +1,11 @@
 {
-  "name": "SALON — book your style",
-  "short_name": "SALON",
-  "description": "Fast, transparent salon booking for students.",
+  "name": "The Prince Beauty Parlour — Gataka",
+  "short_name": "Prince Beauty",
+  "description": "Book braids, wigs, silk presses and nails at The Prince Beauty Parlour, Gataka — live availability and real prices.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0b0b10",
-  "theme_color": "#0b0b10",
+  "background_color": "#fff6fb",
+  "theme_color": "#ec3d95",
   "icons": [
     {
       "src": "/icon.svg",

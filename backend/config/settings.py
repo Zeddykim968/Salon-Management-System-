@@ -35,8 +35,29 @@ if not SECRET_KEY:
             "DJANGO_SECRET_KEY is required when DEBUG is off — set it in .env / Render."
         )
 
-ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "localhost,127.0.0.1")
-CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS", "http://localhost:3000")
+# Hosts are merged with safe defaults so the same .env works locally and on
+# Render: a leading dot matches every subdomain (…onrender.com, …vercel.app).
+# Values must be hostnames — no scheme, no port.
+ALLOWED_HOSTS = list(
+    dict.fromkeys(
+        [
+            *env_list("ALLOWED_HOSTS", ""),
+            "localhost",
+            "127.0.0.1",
+            ".onrender.com",
+            ".vercel.app",
+        ]
+    )
+)
+CSRF_TRUSTED_ORIGINS = list(
+    dict.fromkeys(
+        [
+            *env_list("CSRF_TRUSTED_ORIGINS", ""),
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ]
+    )
+)
 
 FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:3000").rstrip("/")
 API_PORT = os.getenv("API_PORT", "8000")
@@ -156,13 +177,28 @@ CACHES = {
 
 # ---------------------------------------------------------------------------
 # CORS — the Next.js origin talks to this API directly.
-# ---------------------------------------------------------------------------
-CORS_ALLOWED_ORIGINS = [
-    origin
-    for origin in [FRONTEND_ORIGIN, *env_list("CORS_ALLOWED_ORIGINS")]
-    if origin
-]
+# Every origin that may call the API is merged, never replaced:
+#   FRONTEND_ORIGIN      (emailed links + primary app origin)
+#   CORS_ALLOWED_ORIGINS (comma-separated extras, e.g. the Vercel URL)
+#   localhost            (always allowed so local dev keeps working)
+CORS_ALLOWED_ORIGINS = list(
+    dict.fromkeys(
+        [
+            origin
+            for origin in [
+                FRONTEND_ORIGIN,
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                *env_list("CORS_ALLOWED_ORIGINS"),
+            ]
+            if origin
+        ]
+    )
+)
 CORS_ALLOW_CREDENTIALS = False
+# The API authenticates with Bearer tokens (no cookies), so preflight only
+# needs the origin check to pass — Authorization is always allowed through.
+CORS_ALLOW_ALL_HEADERS = True
 
 # ---------------------------------------------------------------------------
 # i18n / time

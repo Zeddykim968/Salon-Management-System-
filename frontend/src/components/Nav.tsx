@@ -127,7 +127,7 @@ export default function Nav() {
       <div className="container nav-inner">
         <Magnetic strength={0.18}>
           <Link href="/" className="brand">
-            Beauty Parlour
+            The Prince Beauty Parlour
           </Link>
         </Magnetic>
 

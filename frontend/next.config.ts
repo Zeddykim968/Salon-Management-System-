@@ -5,7 +5,8 @@ import { resolve } from "node:path";
 // ---------------------------------------------------------------------------
 // Single .env at the repo root configures both Django and Next.js. Next only
 // reads env files from its own directory, so we pull the root file in here and
-// expose the NEXT_PUBLIC_* values (explicit `env` below makes inlining reliable).
+// expose the values below (the explicit `env` block is what inlines them into
+// the browser bundle — that's why a plain NEXT_API_URL works client-side).
 // ---------------------------------------------------------------------------
 const rootEnvPath = resolve(process.cwd(), "..", ".env");
 const rootEnv: Record<string, string> = {};
@@ -23,9 +24,12 @@ if (existsSync(rootEnvPath)) {
   }
 }
 
-// A real env var (e.g. set in Render's dashboard) wins over the file.
-const publicApiUrl =
-  process.env.NEXT_PUBLIC_API_URL || rootEnv.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// A real env var (e.g. set in Vercel's dashboard) wins over the file.
+const apiBaseUrl =
+  (process.env.NEXT_API_URL || rootEnv.NEXT_API_URL || "http://localhost:8000").replace(
+    /\/+$/,
+    ""
+  );
 const publicWhatsappPhone =
   (process.env.NEXT_PUBLIC_WHATSAPP_PHONE || rootEnv.NEXT_PUBLIC_WHATSAPP_PHONE || "").replace(
     /\D/g,
@@ -35,7 +39,8 @@ const publicWhatsappPhone =
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   env: {
-    NEXT_PUBLIC_API_URL: publicApiUrl,
+    // served to the browser at build time — see src/lib/api.ts
+    NEXT_API_URL: apiBaseUrl,
     // salon's public number — the footer's wa.me button uses it
     NEXT_PUBLIC_WHATSAPP_PHONE: publicWhatsappPhone,
   },

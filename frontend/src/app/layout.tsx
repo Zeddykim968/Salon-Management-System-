@@ -1,9 +1,18 @@
 import type { Metadata, Viewport } from "next";
+import { Fraunces } from "next/font/google";
 
 import MotionShell from "@/components/MotionShell";
 import Nav from "@/components/Nav";
 import { Magnetic } from "@/components/motion";
+import "./globals.css";
 
+// Display face for headings, kickers and the brand — the body keeps the
+// system sans for speed. `variable` exposes it as --font-display.
+const display = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-display",
+  display: "swap",
+});
 
 // Public salon number for the footer's click-to-chat button (digits only).
 const WHATSAPP_PHONE = (process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "").replace(/\D/g, "");
@@ -15,11 +24,11 @@ const WHATSAPP_HREF = WHATSAPP_PHONE
 
 export const metadata: Metadata = {
   title: {
-    default: "SALON — book your style",
-    template: "%s · SALON",
+    default: "The Prince Beauty Parlour — Gataka",
+    template: "%s · The Prince Beauty Parlour",
   },
   description:
-    "Fast, transparent salon booking for students: braids, wigs, nails and more. See real prices, live stylist availability and chat with us on WhatsApp.",
+    "The Prince Beauty Parlour, Gataka. Real prices, live stylist availability and instant booking for braids, wigs, silk presses and nails — confirm in chat or take it to WhatsApp.",
   manifest: "/manifest.json",
 };
 
@@ -43,18 +52,21 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
-      <body>
+      <body className={display.variable}>
         <MotionShell>
           <Nav />
           <main>{children}</main>
           <footer className="footer">
             <div className="container row between">
               <div>
-                <strong style={{ color: "var(--pink)" }}>SALON ✨</strong> — student
-                friendly, walk in glowing.
+                <strong style={{ color: "var(--pink)" }}>
+                  The Prince Beauty Parlour ✨
+                </strong>{" "}
+                — Gataka&apos;s salon, walk in glowing.
               </div>
               <div className="small">
-                Prices in KSh · WhatsApp-first · © {new Date().getFullYear()}
+                📍 Gataka · Prices in KSh · WhatsApp-first · ©{" "}
+                {new Date().getFullYear()}
               </div>
               {WHATSAPP_HREF ? (
                 <Magnetic strength={0.35}>

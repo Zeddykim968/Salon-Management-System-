@@ -90,6 +90,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)  # Django /backoffice access
     is_active = models.BooleanField(default=True)  # disabled staff cannot sign in
     date_joined = models.DateTimeField(default=timezone.now)
+    # Which services a stylist may perform — admin assigns them, the booking
+    # flow and /services/<id>/staff both read this.
+    services = models.ManyToManyField(
+        "core.Service", blank=True, related_name="assigned_staff"
+    )
 
     objects = UserManager()
 
