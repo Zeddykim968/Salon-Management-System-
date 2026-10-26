@@ -1,8 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const API_URL = (
-  process.env.NEXT_API_URL
-).replace(/\/+$/, "");
+const RAW_API_URL = process.env.NEXT_API_URL;
+if (!RAW_API_URL) {
+  throw new Error("NEXT_API_URL is not set");
+}
+const API_URL = RAW_API_URL.replace(/\/+$/, "");
 
 const STAFF_ROLES = ["salonist", "nail_tech", "admin"];
 
