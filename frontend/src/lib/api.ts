@@ -1,7 +1,7 @@
 import { clearTokens, getAccessToken, getRefreshToken, saveTokens } from "./auth";
 
 export const API_URL = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+  process.env.NEXT_API_URL || "http://localhost:8000"
 ).replace(/\/+$/, "");
 
 export class ApiError extends Error {
