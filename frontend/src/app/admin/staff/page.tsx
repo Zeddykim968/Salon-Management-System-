@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import StatusBadge from "@/components/StatusBadge";
 import { api } from "@/lib/api";
-import type { Role, StaffMember } from "@/lib/types";
+import type { Me, Role, StaffMember } from "@/lib/types";
 
 const ROLE_OPTIONS: { value: Role; label: string }[] = [
   { value: "salonist", label: "Salonist (hair)" },
@@ -17,6 +17,11 @@ export default function AdminStaffPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  // signed-in admin, so we never offer to delete our own account
+  const [meId, setMeId] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
@@ -36,6 +41,9 @@ export default function AdminStaffPage() {
 
   useEffect(() => {
     void load();
+    void api<Me>("/me")
+      .then((me) => setMeId(me.id))
+      .catch(() => setMeId(null));
   }, [load]);
 
   async function invite(event: React.FormEvent) {
@@ -57,6 +65,23 @@ export default function AdminStaffPage() {
       setError(e instanceof Error ? e.message : "Invite failed");
     } finally {
       setInviting(false);
+    }
+  }
+
+  async function remove(member: StaffMember) {
+    setDeletingId(member.id);
+    setError(null);
+    setNotice(null);
+    try {
+      await api(`/admin/staff/${member.id}`, { method: "DELETE" });
+      setStaff((prev) => prev.filter((s) => s.id !== member.id));
+      setNotice(`${member.full_name || member.email} was deleted with their data.`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Delete failed");
+      await load();
+    } finally {
+      setDeletingId(null);
+      setConfirming(null);
     }
   }
 
@@ -182,6 +207,37 @@ export default function AdminStaffPage() {
               >
                 {member.active ? "Disable" : "Enable"}
               </button>
+
+              {meId && member.id === meId ? (
+                <span className="badge" title="You cannot delete your own account">
+                  that&apos;s you
+                </span>
+              ) : confirming === member.id ? (
+                <span className="row tight">
+                  <button
+                    className="btn btn-sm btn-danger"
+                    disabled={deletingId === member.id}
+                    onClick={() => void remove(member)}
+                  >
+                    {deletingId === member.id ? "Deleting…" : "Yes, delete"}
+                  </button>
+                  <button
+                    className="btn btn-sm btn-ghost"
+                    disabled={deletingId === member.id}
+                    onClick={() => setConfirming(null)}
+                  >
+                    Keep
+                  </button>
+                </span>
+              ) : (
+                <button
+                  className="btn btn-sm btn-ghost"
+                  title="Delete this staff member and their data (schedule, bookings, photos)"
+                  onClick={() => setConfirming(member.id)}
+                >
+                  Delete
+                </button>
+              )}
             </div>
           ))}
         </div>

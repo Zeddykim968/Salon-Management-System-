@@ -6,6 +6,7 @@ import re
 from datetime import datetime, time, timedelta
 
 from django.contrib.auth.tokens import default_token_generator
+from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
 from django.utils.encoding import force_bytes
@@ -117,12 +118,42 @@ def invite_staff(request):
     return Response(StaffMemberSerializer(user).data, status=201)
 
 
-@api_view(["PATCH"])
+def _delete_staff(admin: User, user: User) -> Response:
+    """Remove a staff account together with everything it owns.
+
+    `user.delete()` cascades to StaffDetail, WorkingHours, Bookings and Messages;
+    gallery photos are unlinked by the schema (SET_NULL), so they are removed
+    explicitly here — a deleted stylist should not leave their work in the feed.
+    """
+    if user.pk == admin.pk:
+        raise ValidationError({"detail": "You cannot delete your own account."})
+    if user.role == Role.ADMIN and not (
+        User.objects.filter(role=Role.ADMIN).exclude(pk=user.pk).exists()
+    ):
+        raise ValidationError({"detail": "That is the last admin — invite another one first."})
+
+    payload = {
+        "email": user.email,
+        "full_name": user.full_name,
+        "bookings": Booking.objects.filter(staff=user).count(),
+        "photos": Gallery.objects.filter(staff=user).count(),
+    }
+    with transaction.atomic():
+        Gallery.objects.filter(staff=user).delete()
+        user.delete()
+    log_activity(admin, "staff.delete", payload)
+    return Response(status=204)
+
+
+@api_view(["PATCH", "DELETE"])
 def update_staff(request, staff_id):
     admin = _require_admin(request)
     user = User.objects.filter(pk=staff_id, role__in=Role.staff_roles()).first()
     if user is None:
         raise NotFound("Staff member not found.")
+
+    if request.method == "DELETE":
+        return _delete_staff(admin, user)
 
     if "active" in request.data:
         user.is_active = bool(request.data.get("active"))

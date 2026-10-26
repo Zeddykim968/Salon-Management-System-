@@ -122,6 +122,12 @@ email. Locally the verification link is **printed in the Django server console**
 - **Customers** sign up at `/register` → confirm the emailed link → log in.
 - **Staff (stylists / nail techs) and admins** are invited by an admin from
   `/admin/staff`; they receive a link to set their password.
+- **Removing a staff member** happens on that same page: *Delete* → *Yes, delete*
+  calls `DELETE /admin/staff/<id>`, which removes the account together with
+  everything it owns — their working hours, their bookings, their chat history
+  and their gallery photos. Two guards apply: you cannot delete your own
+  account, and you cannot delete the last remaining admin. If you only want the
+  person unable to work without losing history, use *Disable* instead.
 - Sessions are **JWTs** (SimpleJWT). The access token lives 30 min, the refresh
   token 14 days; the frontend refreshes transparently. `middleware.ts` guards the
   `/account`, `/staff` and `/admin` routes by reading the token cookie and asking
