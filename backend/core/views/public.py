@@ -1,6 +1,7 @@
 """Public endpoints — no account needed."""
 from __future__ import annotations
 
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Prefetch
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
@@ -28,9 +29,18 @@ def services_list(request):
 @permission_classes([AllowAny])
 def service_staff(request, service_id):
     """Stylists who perform a given service (landing → style → pick a person)."""
+    # Deleted or malformed ids must 404, not 500: UUID parsing raises inside
+    # the filter, and admin-removed services shouldn't keep a public page.
+    try:
+        service = Service.objects.filter(pk=service_id, active=True).first()
+    except (ValueError, DjangoValidationError):
+        service = None
+    if service is None:
+        return Response({"detail": "Service not found."}, status=404)
+
     staff = (
         User.objects.filter(
-            is_active=True, role__in=Role.staff_roles(), services__pk=service_id
+            is_active=True, role__in=Role.staff_roles(), services=service
         )
         .distinct()
         .prefetch_related(
@@ -87,6 +97,11 @@ def availability(request, staff_id):
         "whatsapp": detail.whatsapp if detail else None,
         "status": detail.status if detail else "off",
         "status_note": detail.status_note if detail else None,
+        # what this stylist actually offers — the booking page filters its
+        # service picker with it so customers can't pick an unsupported service
+        "service_ids": [
+            str(pk) for pk in staff.services.filter(active=True).values_list("id", flat=True)
+        ],
     }
     payload["service"] = (
         {

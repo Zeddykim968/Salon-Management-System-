@@ -53,10 +53,14 @@ The values that matter to get running:
 with safe defaults** (`localhost`, `.onrender.com`) in `settings.py`, so local dev
 keeps working no matter what the file says.
 
-Optional integrations (`BREVO_API_KEY`, `NEXT_PUBLIC_WHATSAPP_PHONE`, `NEXT_PUBLIC_INSTAGRAM_URL`,
-`NEXT_PUBLIC_TIKTOK_URL`, `CLOUDINARY_URL`, …)
+Optional integrations (`BREVO_API_KEY`, `NEXT_PUBLIC_WHATSAPP_PHONE`, `CLOUDINARY_URL`, …)
 can stay empty locally — each one **logs instead of sending** until you add a key,
 so nothing breaks while you wire them up.
+
+The footer's social icons always render: `NEXT_PUBLIC_INSTAGRAM_URL` and
+`NEXT_PUBLIC_TIKTOK_URL` fall back to the salon's default profile URLs when the
+variables are absent (e.g. a fresh Vercel build), so replace them with the real
+handles whenever you're ready.
 
 ---
 
@@ -123,6 +127,11 @@ email. Locally the verification link is **printed in the Django server console**
 - **Customers** sign up at `/register` → confirm the emailed link → log in.
 - **Staff (stylists / nail techs) and admins** are invited by an admin from
   `/admin/staff`; they receive a link to set their password.
+- **The service menu** is managed from `/admin/services` — add, edit, hide/show
+  and remove services without touching code. Deleting a service that has
+  bookings **hides it instead** (bookings keep their history); a service with
+  no bookings is removed outright. The staff pick their own services from
+  their profile page.
 - **Removing a staff member** happens on that same page: *Delete* → *Yes, delete*
   calls `DELETE /admin/staff/<id>`, which removes the account together with
   everything it owns — their working hours, their bookings, their chat history

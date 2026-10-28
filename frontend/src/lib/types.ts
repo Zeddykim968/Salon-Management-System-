@@ -57,6 +57,7 @@ export interface Availability {
     whatsapp: string | null;
     status: StaffStatus;
     status_note: string | null;
+    service_ids?: string[];
   } | null;
   service: {
     id: string;

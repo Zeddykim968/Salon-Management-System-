@@ -14,10 +14,15 @@ const display = Fraunces({
   display: "swap",
 });
 
-// Salon social profiles (footer). Set both in the root .env — leave one
-// empty and its icon is simply not rendered.
-const INSTAGRAM_URL = (process.env.NEXT_PUBLIC_INSTAGRAM_URL || "").trim();
-const TIKTOK_URL = (process.env.NEXT_PUBLIC_TIKTOK_URL || "").trim();
+// Salon social profiles (footer). Override either in the root .env — but they
+// ship with defaults so the icons are always visible even when the env file
+// (e.g. on Vercel) doesn't carry them yet.
+const INSTAGRAM_URL =
+  (process.env.NEXT_PUBLIC_INSTAGRAM_URL || "").trim() ||
+  "https://www.instagram.com/theprincebeautyparlour";
+const TIKTOK_URL =
+  (process.env.NEXT_PUBLIC_TIKTOK_URL || "").trim() ||
+  "https://www.tiktok.com/@theprincebeautyparlour";
 
 // Public salon number for the footer's click-to-chat button (digits only).
 const WHATSAPP_PHONE = (process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "").replace(/\D/g, "");

@@ -54,6 +54,8 @@ urlpatterns = [
     path("admin/staff", admin_views.staff_list),
     path("admin/staff/invite", admin_views.invite_staff),
     path("admin/staff/<str:staff_id>", admin_views.update_staff),
+    path("admin/services", admin_views.services_admin),
+    path("admin/services/<str:service_id>", admin_views.service_admin),
     path("admin/customers", admin_views.customers),
     path("admin/activity", admin_views.activity),
     path("admin/gallery", admin_views.gallery_moderation),

@@ -6,6 +6,7 @@ import re
 from datetime import datetime, time, timedelta
 
 from django.contrib.auth.tokens import default_token_generator
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -25,6 +26,7 @@ from ..models import (
     Campaign,
     Gallery,
     Role,
+    Service,
     SiteAsset,
     StaffDetail,
     User,
@@ -35,6 +37,7 @@ from ..serializers import (
     BookingSerializer,
     CampaignSerializer,
     GalleryPhotoSerializer,
+    ServiceSerializer,
     StaffMemberSerializer,
 )
 
@@ -176,6 +179,79 @@ def update_staff(request, staff_id):
         user.save(update_fields=["phone"])
 
     return Response(StaffMemberSerializer(user).data)
+
+
+@api_view(["GET", "POST"])
+def services_admin(request):
+    """The salon menu: add and edit services without touching the seed code.
+
+    GET returns every service (including hidden ones) plus usage counters so
+    the admin can see what a delete would affect.
+    """
+    _require_admin(request)
+
+    if request.method == "POST":
+        serializer = ServiceSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        service = serializer.save()
+        log_activity(
+            request.user,
+            "service.create",
+            {"service": service.name, "price": service.price_kes, "category": service.category},
+        )
+        return Response(_service_payload(service), status=201)
+
+    services = list(Service.objects.all())
+    return Response([_service_payload(service) for service in services])
+
+
+def _service_payload(service: Service) -> dict:
+    data = ServiceSerializer(service).data
+    data["bookings"] = service.bookings.count()
+    data["staff_count"] = service.assigned_staff.count()
+    return data
+
+
+@api_view(["PATCH", "DELETE"])
+def service_admin(request, service_id):
+    admin = _require_admin(request)
+    # malformed ids raise inside the query — they must 404, never 500
+    try:
+        service = Service.objects.filter(pk=service_id).first()
+    except (ValueError, DjangoValidationError):
+        service = None
+    if service is None:
+        raise NotFound("Service not found.")
+
+    if request.method == "DELETE":
+        bookings = Booking.objects.filter(service=service).count()
+        if bookings:
+            # Booking.service is PROTECTed — history must survive. Hide the
+            # service from the public site instead of destroying the rows.
+            service.active = False
+            service.save(update_fields=["active"])
+            log_activity(admin, "service.disable", {"service": service.name, "bookings": bookings})
+            payload = _service_payload(service)
+            payload["detail"] = (
+                f"{bookings} booking(s) reference this service, so it was hidden "
+                "from the site instead of deleted. Booking history is untouched."
+            )
+            return Response(payload)
+
+        name = service.name
+        service.delete()  # clears staff M2M rows automatically
+        log_activity(admin, "service.delete", {"service": name})
+        return Response(status=204)
+
+    serializer = ServiceSerializer(service, data=request.data, partial=True)
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    log_activity(
+        admin,
+        "service.update",
+        {"service": service.name, "fields": sorted(str(k) for k in request.data.keys())},
+    )
+    return Response(_service_payload(service))
 
 
 @api_view(["GET"])

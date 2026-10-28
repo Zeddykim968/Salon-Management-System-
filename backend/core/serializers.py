@@ -37,6 +37,18 @@ class ServiceSerializer(serializers.ModelSerializer):
         model = Service
         fields = ["id", "name", "category", "price_kes", "duration_min", "image_url", "active"]
 
+    def validate_duration_min(self, value: int) -> int:
+        # mirrors Service.clean() — DRF never calls model clean() on its own
+        if not 5 <= value <= 600:
+            raise serializers.ValidationError("Duration must be between 5 and 600 minutes.")
+        return value
+
+    def validate_name(self, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Give the service a name.")
+        return value
+
 
 class StaffDetailFields:
     """Shared flattening of staff_details onto the user object."""

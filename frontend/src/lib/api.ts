@@ -121,26 +121,35 @@ async function parseBody<T>(res: Response): Promise<T> {
   }
 
   if (!res.ok) {
-    const detail =
-      data && typeof data === "object" && "detail" in data
-        ? (data as { detail: unknown }).detail
-        : null;
-    const message =
-      typeof detail === "string"
-        ? detail
-        : Array.isArray(detail)
-          ? detail
-              .map((d) =>
-                typeof d === "object" && d && "msg" in d
-                  ? String((d as { msg: unknown }).msg)
-                  : JSON.stringify(d)
-              )
-              .join("; ")
-          : `Request failed (${res.status})`;
-    throw new ApiError(res.status, message);
+    throw new ApiError(res.status, humanError(data, res.status));
   }
 
   return data as T;
+}
+
+/**
+ * DRF errors arrive as {"detail": …}, ["msg", …] or {"field": ["msg"]} —
+ * flatten whatever shape into one human sentence.
+ */
+function humanError(data: unknown, status: number): string {
+  const root =
+    data && typeof data === "object" && "detail" in data
+      ? (data as { detail: unknown }).detail
+      : data;
+  const parts: string[] = [];
+  const walk = (value: unknown): void => {
+    if (typeof value === "string") {
+      if (value) parts.push(value);
+    } else if (Array.isArray(value)) {
+      value.forEach(walk);
+    } else if (value && typeof value === "object") {
+      const record = value as Record<string, unknown>;
+      if ("msg" in record) walk(record.msg);
+      else Object.values(record).forEach(walk);
+    }
+  };
+  walk(root);
+  return parts.join(" ") || `Request failed (${status})`;
 }
 
 /** Upload a file with multipart/form-data. */

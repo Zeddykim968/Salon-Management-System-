@@ -92,6 +92,10 @@ function BookInner() {
 
   const service = services.find((s) => s.id === serviceId) ?? null;
   const staff = availability?.staff ?? null;
+  // Only services this stylist offers — availability echoes the list back so
+  // the picker never offers something the backend will reject on submit.
+  const offeredIds = staff?.service_ids;
+  const bookable = offeredIds ? services.filter((s) => offeredIds.includes(s.id)) : services;
 
   async function submit() {
     if (!selected || submitting) return;
@@ -222,7 +226,7 @@ function BookInner() {
               value={serviceId}
               onChange={(event) => setServiceId(event.target.value)}
             >
-              {services.map((item) => (
+              {(bookable.length > 0 ? bookable : services).map((item) => (
                 <option key={item.id} value={item.id}>
                   {item.name} — {kes(item.price_kes)} · {item.duration_min} min
                 </option>

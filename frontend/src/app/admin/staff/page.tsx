@@ -151,7 +151,7 @@ export default function AdminStaffPage() {
         <p className="small muted" style={{ marginTop: 10 }}>
           Email sends the invite; the new member lands on
           <b> /set-password</b> and their schedule is seeded Mon–Sat 09:00–18:00
-          with their category&apos;s services.
+          and they pick which services they offer from their profile.
         </p>
       </form>
 
