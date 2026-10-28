@@ -53,7 +53,8 @@ The values that matter to get running:
 with safe defaults** (`localhost`, `.onrender.com`) in `settings.py`, so local dev
 keeps working no matter what the file says.
 
-Optional integrations (`BREVO_API_KEY`, `NEXT_PUBLIC_WHATSAPP_PHONE`, `CLOUDINARY_URL`, …)
+Optional integrations (`BREVO_API_KEY`, `NEXT_PUBLIC_WHATSAPP_PHONE`, `NEXT_PUBLIC_INSTAGRAM_URL`,
+`NEXT_PUBLIC_TIKTOK_URL`, `CLOUDINARY_URL`, …)
 can stay empty locally — each one **logs instead of sending** until you add a key,
 so nothing breaks while you wire them up.
 

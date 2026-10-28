@@ -483,6 +483,18 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; }
   display: inline-flex; align-items: center; justify-content: center; padding: 0 6px;
 }
 
+/* conversation list beside the thread — stacks on phones */
+.messages-grid {
+  display: grid;
+  grid-template-columns: minmax(230px, 300px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 760px) {
+  .messages-grid { grid-template-columns: 1fr; }
+  .messages-grid .card { max-height: 240px; }
+}
+
 /* ---------- avatar ---------- */
 .avatar {
   width: 44px; height: 44px; border-radius: 50%;
@@ -523,6 +535,20 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; }
 
 /* ---------- footer ---------- */
 .footer { border-top: 1px solid var(--line); margin-top: 60px; padding: 34px 0; color: var(--muted); font-size: 0.9rem; }
+
+/* social icons (Instagram / TikTok) in the footer */
+.social-link {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--card); color: var(--muted);
+  transition: transform 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.social-link:hover {
+  color: #fff; border-color: transparent;
+  background: linear-gradient(135deg, var(--pink), var(--violet));
+  transform: translateY(-3px);
+}
+.social-link:focus-visible { outline: 2px solid var(--pink); outline-offset: 2px; }
 
 /* ---------- misc ---------- */
 .spinner {

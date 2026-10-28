@@ -14,6 +14,11 @@ const display = Fraunces({
   display: "swap",
 });
 
+// Salon social profiles (footer). Set both in the root .env — leave one
+// empty and its icon is simply not rendered.
+const INSTAGRAM_URL = (process.env.NEXT_PUBLIC_INSTAGRAM_URL || "").trim();
+const TIKTOK_URL = (process.env.NEXT_PUBLIC_TIKTOK_URL || "").trim();
+
 // Public salon number for the footer's click-to-chat button (digits only).
 const WHATSAPP_PHONE = (process.env.NEXT_PUBLIC_WHATSAPP_PHONE || "").replace(/\D/g, "");
 const WHATSAPP_HREF = WHATSAPP_PHONE
@@ -68,18 +73,68 @@ export default function RootLayout({
                 📍 Gataka · Prices in KSh · WhatsApp-first · ©{" "}
                 {new Date().getFullYear()}
               </div>
-              {WHATSAPP_HREF ? (
-                <Magnetic strength={0.35}>
+              <div className="row tight">
+                {INSTAGRAM_URL ? (
                   <a
-                    className="btn btn-ghost btn-sm wa-btn"
-                    href={WHATSAPP_HREF}
+                    className="social-link"
+                    href={INSTAGRAM_URL}
                     target="_blank"
                     rel="noopener noreferrer"
+                    aria-label="The Prince Beauty Parlour on Instagram"
                   >
-                    Chat on WhatsApp 💬
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="17"
+                      height="17"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.7"
+                      aria-hidden="true"
+                    >
+                      <rect x="3.5" y="3.5" width="17" height="17" rx="5" />
+                      <circle cx="12" cy="12" r="4" />
+                      <circle
+                        cx="17.2"
+                        cy="6.8"
+                        r="1.15"
+                        fill="currentColor"
+                        stroke="none"
+                      />
+                    </svg>
                   </a>
-                </Magnetic>
-              ) : null}
+                ) : null}
+                {TIKTOK_URL ? (
+                  <a
+                    className="social-link"
+                    href={TIKTOK_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="The Prince Beauty Parlour on TikTok"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="17"
+                      height="17"
+                      fill="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path d="M16.5 3c.3 1.6 1.2 2.95 2.7 3.25v2.65a5.9 5.9 0 0 1-2.65-.95v5.95a5.4 5.4 0 1 1-5.4-5.4c.28 0 .55.03.82.08v2.72a2.72 2.72 0 1 0 1.9 2.6V3h2.63z" />
+                    </svg>
+                  </a>
+                ) : null}
+                {WHATSAPP_HREF ? (
+                  <Magnetic strength={0.35}>
+                    <a
+                      className="btn btn-ghost btn-sm wa-btn"
+                      href={WHATSAPP_HREF}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Chat on WhatsApp 💬
+                    </a>
+                  </Magnetic>
+                ) : null}
+              </div>
             </div>
           </footer>
         </MotionShell>

@@ -44,3 +44,9 @@ export function clearTokens() {
   writeCookie(ACCESS, "", 0);
   writeCookie(REFRESH, "", 0);
 }
+
+/** Drop only the (dead) access token so the next call refreshes it.
+ *  The refresh token survives — used by api.ts on a 401. */
+export function clearAccessToken() {
+  writeCookie(ACCESS, "", 0);
+}

@@ -35,6 +35,17 @@ const publicWhatsappPhone =
     /\D/g,
     ""
   );
+// Footer social profiles — full URLs straight from the root .env.
+const publicInstagramUrl = (
+  process.env.NEXT_PUBLIC_INSTAGRAM_URL ||
+  rootEnv.NEXT_PUBLIC_INSTAGRAM_URL ||
+  ""
+).trim();
+const publicTiktokUrl = (
+  process.env.NEXT_PUBLIC_TIKTOK_URL ||
+  rootEnv.NEXT_PUBLIC_TIKTOK_URL ||
+  ""
+).trim();
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -43,6 +54,9 @@ const nextConfig: NextConfig = {
     NEXT_API_URL: apiBaseUrl,
     // salon's public number — the footer's wa.me button uses it
     NEXT_PUBLIC_WHATSAPP_PHONE: publicWhatsappPhone,
+    // footer social directory (see src/app/layout.tsx)
+    NEXT_PUBLIC_INSTAGRAM_URL: publicInstagramUrl,
+    NEXT_PUBLIC_TIKTOK_URL: publicTiktokUrl,
   },
   images: {
     remotePatterns: [

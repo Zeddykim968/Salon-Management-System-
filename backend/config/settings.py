@@ -160,7 +160,10 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "core.exceptions.api_exception_handler",
 }
 
-SIMPLEJWT = {
+# NOTE: the package reads `SIMPLE_JWT` (underscore) — a misspelled block here
+ # silently falls back to its 5-minute default, which expired the frontend's
+ # 30-minute cookie mid-session and broke the messages polling.
+SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
     "ROTATE_REFRESH_TOKENS": True,

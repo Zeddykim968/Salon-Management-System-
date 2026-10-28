@@ -5,8 +5,9 @@ import { useCallback, useEffect, useState } from "react";
 
 import StatusBadge from "@/components/StatusBadge";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import Chat from "@/components/Chat";
 import { ApiError, api, kes } from "@/lib/api";
-import type { Booking, Me, StaffStatus } from "@/lib/types";
+import type { Booking, Contact, Me, StaffStatus } from "@/lib/types";
 
 import { Item, Magnetic, Reveal, Stagger } from "@/components/motion";
 
@@ -20,6 +21,12 @@ export default function StaffHomePage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [statusNote, setStatusNote] = useState("");
+
+  // internal messages (admin ↔ staff)
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [activeContact, setActiveContact] = useState<string | null>(null);
+  const [contactsReady, setContactsReady] = useState(false);
+  const [contactsError, setContactsError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -46,6 +53,37 @@ export default function StaffHomePage() {
     const interval = setInterval(() => void load(), 15000);
     return () => clearInterval(interval);
   }, [me, load]);
+
+  const loadContacts = useCallback(async () => {
+    try {
+      const data = await api<Contact[]>("/messages/contacts");
+      setContacts(data);
+      // keep whichever thread is open, otherwise land on the admin
+      setActiveContact((prev) => prev ?? data[0]?.id ?? null);
+      setContactsError(null);
+    } catch (e) {
+      setContactsError(e instanceof Error ? e.message : "Could not load messages");
+    } finally {
+      setContactsReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadContacts();
+  }, [loadContacts]);
+
+  // opening a thread marks it read on the server — refresh the unread badges
+  useEffect(() => {
+    if (!activeContact) return;
+    const timer = setTimeout(() => void loadContacts(), 1500);
+    return () => clearTimeout(timer);
+  }, [activeContact, loadContacts]);
+
+  // new messages from the admin arrive while the page stays open
+  useEffect(() => {
+    const interval = setInterval(() => void loadContacts(), 20000);
+    return () => clearInterval(interval);
+  }, [loadContacts]);
 
   async function setStatus(status: StaffStatus) {
     if (!me) return;
@@ -91,6 +129,8 @@ export default function StaffHomePage() {
   const upcoming = schedule.filter((b) => b.status === "confirmed");
   const history = schedule.filter((b) => ["completed", "declined", "cancelled"].includes(b.status));
   const currentStatus = (me?.staff_details?.status ?? "available") as StaffStatus;
+  const unread = contacts.reduce((total, contact) => total + contact.unread, 0);
+  const currentContact = contacts.find((contact) => contact.id === activeContact) ?? null;
 
   return (
     <div className="container page">
@@ -150,6 +190,74 @@ export default function StaffHomePage() {
           <StatusBadge status={currentStatus} />
         </div>
       </div>
+
+      {/* ------------------------------------------------- internal messages */}
+      <section id="messages" style={{ marginBottom: 30 }}>
+        <div className="row between" style={{ marginBottom: 12 }}>
+          <h2 style={{ fontSize: "1.35rem", margin: 0 }}>
+            Messages{" "}
+            {unread > 0 ? <span className="unread">{unread}</span> : null}
+          </h2>
+          <span className="chip">internal · salon team</span>
+        </div>
+
+        {contactsError ? <div className="alert error">{contactsError}</div> : null}
+
+        {!contactsReady ? (
+          <div className="loading">
+            <span className="spinner" />
+          </div>
+        ) : contacts.length === 0 ? (
+          <div className="empty">
+            No conversations yet — anything the admin sends you lands here.
+          </div>
+        ) : (
+          <div className="messages-grid">
+            <div className="card" style={{ padding: 10, maxHeight: "66vh", overflowY: "auto" }}>
+              {contacts.map((contact) => (
+                <button
+                  key={contact.id}
+                  className={`contact-item${activeContact === contact.id ? " active" : ""}`}
+                  onClick={() => setActiveContact(contact.id)}
+                >
+                  <span className="avatar sm">
+                    {contact.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={contact.avatar_url} alt={contact.full_name} />
+                    ) : (
+                      contact.full_name.slice(0, 1).toUpperCase()
+                    )}
+                  </span>
+                  <span className="grow" style={{ minWidth: 0 }}>
+                    <strong style={{ display: "block", fontSize: "0.94rem" }}>
+                      {contact.full_name}
+                    </strong>
+                    <span
+                      className="small muted"
+                      style={{
+                        display: "block",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {contact.last_message?.body ?? contact.role.replace("_", " ")}
+                    </span>
+                  </span>
+                  {contact.unread > 0 ? <span className="unread">{contact.unread}</span> : null}
+                </button>
+              ))}
+            </div>
+            <div>
+              {currentContact ? (
+                <Chat otherId={currentContact.id} otherName={currentContact.full_name} />
+              ) : (
+                <div className="empty">Pick a conversation</div>
+              )}
+            </div>
+          </div>
+        )}
+      </section>
 
       {/* ------------------------------------------------------------ pending */}
       <section style={{ marginBottom: 30 }}>

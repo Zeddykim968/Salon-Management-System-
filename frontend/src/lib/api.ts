@@ -1,4 +1,4 @@
-import { clearTokens, getAccessToken, getRefreshToken, saveTokens } from "./auth";
+import { clearAccessToken, clearTokens, getAccessToken, getRefreshToken, saveTokens } from "./auth";
 
 export const API_URL = (
   process.env.NEXT_API_URL || "http://localhost:8000"
@@ -61,36 +61,56 @@ export interface ApiOptions {
 }
 
 export async function api<T = unknown>(path: string, options: ApiOptions = {}): Promise<T> {
-  const headers = new Headers(options.headers);
-  let body: BodyInit | undefined;
-
-  if (options.formData) {
-    body = options.formData;
-  } else if (options.json !== undefined) {
-    headers.set("content-type", "application/json");
-    body = JSON.stringify(options.json);
-  }
-
   const needsAuth = options.auth !== false;
-  const token = needsAuth ? await accessToken() : null;
-  if (token) headers.set("Authorization", `Bearer ${token}`);
-
   const method =
     options.method ??
     (options.json !== undefined || options.formData ? "POST" : "GET");
 
-  let res: Response;
-  try {
-    res = await fetch(`${API_URL}${path}`, {
-      method,
-      headers,
-      body,
-      cache: "no-store",
-    });
-  } catch {
-    throw new ApiError(0, "Cannot reach the API — is the backend running?");
-  }
+  // A 401 means the access token died while it was still sitting in the
+  // cookie (lifetime skew, clock drift, revoked secret). Refresh once and
+  // replay the request instead of surfacing `token_not_valid` to the UI —
+  // otherwise a long-lived page (staff messages, schedule) silently stops
+  // receiving updates until a full reload.
+  let retried = false;
+  while (true) {
+    const headers = new Headers(options.headers);
+    let body: BodyInit | undefined;
 
+    if (options.formData) {
+      body = options.formData;
+    } else if (options.json !== undefined) {
+      headers.set("content-type", "application/json");
+      body = JSON.stringify(options.json);
+    }
+
+    const token = needsAuth ? await accessToken() : null;
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+
+    let res: Response;
+    try {
+      res = await fetch(`${API_URL}${path}`, {
+        method,
+        headers,
+        body,
+        cache: "no-store",
+      });
+    } catch {
+      throw new ApiError(0, "Cannot reach the API — is the backend running?");
+    }
+
+    if (res.status === 401 && needsAuth && !retried && getRefreshToken()) {
+      retried = true;
+      // Drop only the stale access token so accessToken() forces a refresh;
+      // the refresh token must survive this, so no clearTokens() here.
+      clearAccessToken();
+      continue;
+    }
+
+    return parseBody<T>(res);
+  }
+}
+
+async function parseBody<T>(res: Response): Promise<T> {
   if (res.status === 204) return undefined as T;
 
   let data: unknown = null;
