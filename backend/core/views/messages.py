@@ -14,7 +14,7 @@ from ..serializers import MessageSerializer
 
 def _other_user(user_id, me: User) -> User:
     try:
-        other = User.objects.get(pk=user_id, is_active=True).first()
+        other = User.objects.filter(pk=user_id, is_active=True).first()
     except (ValueError, DjangoValidationError):
         other = None
     if other is None:
