@@ -72,10 +72,10 @@ export default function RootLayout({
                 <strong style={{ color: "var(--pink)" }}>
                   The Prince Beauty Parlour ✨
                 </strong>{" "}
-                — Gataka&apos;s salon, walk in glowing.
+                — Gataka&apos;s salon, walk out glowing.
               </div>
               <div className="small">
-                📍 Gataka · Prices in KSh · WhatsApp-first · ©{" "}
+                📍 Gataka · Rongai · Come have a taste of us · ©{" "}
                 {new Date().getFullYear()}
               </div>
               <div className="row tight">
