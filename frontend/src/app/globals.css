@@ -297,6 +297,10 @@ p { margin: 0 0 12px; }
   filter: blur(60px);
   opacity: 0.35;
   pointer-events: none;
+  /* Framer moves this layer on scroll; without its own layer the blur is
+     re-rastered every frame and the page stutters on the way down. */
+  will-change: transform;
+  transform: translateZ(0);
 }
 .hero-img { border-radius: 20px; max-height: 380px; object-fit: cover; width: 100%; }
 
@@ -355,19 +359,88 @@ p { margin: 0 0 12px; }
 .ticker-band { margin-top: 34px; }
 .ticker-band .chip { white-space: nowrap; }
 
-/* service rows slide an arrow out on hover */
-.service-card { position: relative; overflow: hidden; }
-.service-go {
-  position: absolute;
-  right: 16px;
-  bottom: 10px;
-  opacity: 0;
-  transform: translateX(-10px);
-  color: var(--pink);
-  font-weight: 900;
-  transition: 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+/* ---------- service rows --------------------------------------------------
+   The lift is owned by Framer Motion (the Item wrapper) so the card only
+   animates things that don't fight it: border, shadow, a light sweep, the
+   price pop and the Book pill.                                          */
+.service-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: border-color 0.25s ease, box-shadow 0.3s ease;
 }
-.service-card:hover .service-go { opacity: 1; transform: translateX(0); }
+/* light sweep that crosses the card on hover — pseudo-element, so it can't
+   collide with the wrapper's transform */
+.service-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 32%,
+    color-mix(in srgb, #fff 55%, transparent) 50%,
+    transparent 68%
+  );
+  transform: translateX(-130%);
+  transition: transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+.service-card:hover,
+.service-card:focus-visible {
+  border-color: var(--pink);
+  box-shadow: var(--shadow);
+}
+.service-card:hover::after,
+.service-card:focus-visible::after { transform: translateX(130%); }
+
+.service-num {
+  flex: 0 0 auto;
+  min-width: 34px;
+  font-weight: 900;
+  font-size: 1.02rem;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--pink), var(--violet));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  opacity: 0.5;
+  transition: opacity 0.25s ease, transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.service-card:hover .service-num { opacity: 1; transform: translateY(-2px) rotate(-6deg); }
+
+.service-body { display: flex; flex-direction: column; gap: 5px; min-width: 0; flex: 1; }
+.service-name { font-size: 1.05rem; font-weight: 800; }
+.service-meta { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 0.82rem; }
+
+.service-side { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; flex: 0 0 auto; }
+.service-card .price { transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.service-card:hover .price { transform: scale(1.07); }
+
+.service-book {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, var(--pink), var(--violet));
+  color: #fff;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(12px);
+  transition: opacity 0.28s ease, transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.service-card:hover .service-book,
+.service-card:focus-visible .service-book { opacity: 1; transform: translateX(0); }
+/* touch devices have no hover — show the CTA straight away */
+@media (hover: none) {
+  .service-book { opacity: 1; transform: none; }
+}
 
 /* draggable carousel cards */
 .crew-card {
@@ -588,6 +661,14 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; }
 .magnetic { display: inline-flex; will-change: transform; }
 .tilt { transform-style: preserve-3d; will-change: transform; }
 
+/* Framer Motion owns the lift for anything inside an Item (the .motion-item
+   wrapper springs to -6px). When a child ALSO has its own CSS :hover lift it
+   moves at a different rate — the card visibly shears as the two settle.
+   Keep the border/shadow feedback, drop the competing transform. */
+.motion-item > .card.hover:hover,
+.motion-item > .list-item:hover,
+.motion-item > .stat:hover { transform: none; }
+
 .drag { position: relative; }
 .drag-viewport { overflow: hidden; }
 .drag-track {
@@ -640,7 +721,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; }
 
 @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .marquee { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
-.marquee-track { display: flex; gap: 14px; width: max-content; animation: marquee 26s linear infinite; }
+/* spacing must live on the chips, not as a track `gap`: a gap is not part of
+   the duplicated unit, so -50% landed half a gap short and the row jumped
+   every loop. Per-chip margin keeps the period exact. */
+.marquee-track { display: flex; width: max-content; animation: marquee 26s linear infinite; }
+.marquee-track .chip { margin-right: 14px; }
 .marquee:hover .marquee-track { animation-play-state: paused; }
 
 @media (prefers-reduced-motion: reduce) {

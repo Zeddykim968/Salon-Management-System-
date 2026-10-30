@@ -26,12 +26,14 @@ interface Stylist extends StaffCard {
 }
 
 const TICKER = [
-  "⚡ Instant slots",
-  "💬 WhatsApp first",
-  "🎓 Student prices",
-  "💅 Nails & braids",
-  "📍 Walk-ins welcome",
-  "✨ No hidden fees",
+  "Instant slots",
+  "WhatsApp first",
+  "Affordable prices",
+  "Quality services",
+  "Nails & braids",
+  "Manicure & Pedicure",
+  "Walk-ins welcome",
+  "No hidden fees",
 ];
 
 export default function HomePage() {
@@ -231,27 +233,44 @@ export default function HomePage() {
                 </div>
 
                 <Stagger className="grid">
-                  {(category === "hair" ? hair : nails).map((service) => (
-                    <Item key={service.id}>
-                      <Link href={`/styles/${service.id}`} className="card hover service-card">
-                        <div className="row between">
-                          <div>
-                            <strong style={{ fontSize: "1.05rem" }}>
+                  {(category === "hair" ? hair : nails).map(
+                    (service, index) => (
+                      <Item key={service.id}>
+                        <Link
+                          href={`/styles/${service.id}`}
+                          className="card service-card"
+                        >
+                          <span className="service-num" aria-hidden="true">
+                            {String(index + 1).padStart(2, "0")}
+                          </span>
+
+                          <span className="service-body">
+                            <strong className="service-name">
                               {service.name}
                             </strong>
-                            <div className="small muted">
-                              {service.duration_min} min ·{" "}
-                              {service.category === "hair" ? "hair" : "nails"}
-                            </div>
-                          </div>
-                          <div className="price">{kes(service.price_kes)}</div>
-                        </div>
-                        <span className="service-go" aria-hidden="true">
-                          →
-                        </span>
-                      </Link>
-                    </Item>
-                  ))}
+                            <span className="service-meta">
+                              <span>{service.duration_min} min</span>
+                              <span aria-hidden="true">·</span>
+                              <span>
+                                {service.category === "hair"
+                                  ? "hair"
+                                  : "nails"}
+                              </span>
+                            </span>
+                          </span>
+
+                          <span className="service-side">
+                            <span className="price">
+                              {kes(service.price_kes)}
+                            </span>
+                            <span className="service-book">
+                              Book <span aria-hidden="true">→</span>
+                            </span>
+                          </span>
+                        </Link>
+                      </Item>
+                    )
+                  )}
                   {category === "hair" && hair.length === 0 ? (
                     <div className="empty">No hair services yet.</div>
                   ) : null}

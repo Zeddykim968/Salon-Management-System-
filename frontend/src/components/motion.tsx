@@ -99,7 +99,7 @@ export function Item({
 }) {
   return (
     <motion.div
-      className={className}
+      className={`motion-item ${className}`.trim()}
       style={style}
       variants={{
         hidden: { opacity: 0, y: 22, scale: 0.98 },
@@ -110,8 +110,14 @@ export function Item({
           transition: { duration: 0.55, ease: EASE },
         },
       }}
-      whileHover={{ y: -6 }}
-      transition={{ type: "spring", stiffness: 340, damping: 22 }}
+      // Gesture transitions live on the gesture itself: a top-level
+      // `transition` would also apply to the variants and make the entrance
+      // spring instead of easing, which read as a stutter.
+      whileHover={{
+        y: -6,
+        transition: { type: "spring", stiffness: 340, damping: 22, mass: 0.4 },
+      }}
+      whileTap={{ scale: 0.985, transition: { duration: 0.12 } }}
     >
       {children}
     </motion.div>

@@ -42,9 +42,12 @@ def service_staff(request, service_id):
         User.objects.filter(
             is_active=True, role__in=Role.staff_roles(), services=service
         )
+        .exclude(role=Role.ADMIN)  # admins manage the salon, they don't get a public card
         .distinct()
+        # NOTE: no [:6] here — Django 5.2 can't filter a sliced prefetch
+        # queryset (TypeError → 500). StaffCardSerializer applies photo_limit.
         .prefetch_related(
-            Prefetch("gallery_photos", queryset=Gallery.objects.filter(approved=True)[:6])
+            Prefetch("gallery_photos", queryset=Gallery.objects.filter(approved=True))
         )
     )
     return Response(StaffCardSerializer(staff, many=True, context={"photo_limit": 6}).data)
@@ -53,9 +56,14 @@ def service_staff(request, service_id):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def stylists(request):
-    """Every active staff member with bio, status, photos and services."""
+    """Every active staff member with bio, status, photos and services.
+
+    Admins are excluded — the owner/admin account manages the salon and
+    shouldn't appear as a bookable crew card on the public homepage.
+    """
     staff = (
         User.objects.filter(is_active=True, role__in=Role.staff_roles())
+        .exclude(role=Role.ADMIN)
         .select_related("staff_detail")
         .prefetch_related("services", "gallery_photos")
     )
@@ -68,6 +76,7 @@ def availability(request, staff_id):
     """Free slots for one stylist on one day: working hours minus bookings."""
     staff = (
         User.objects.filter(pk=staff_id, is_active=True, role__in=Role.staff_roles())
+        .exclude(role=Role.ADMIN)  # admins aren't bookable — see stylists()
         .select_related("staff_detail")
         .first()
     )

@@ -53,7 +53,7 @@ def create_booking(request):
 
     staff = User.objects.filter(
         pk=request.data.get("staff_id"), is_active=True, role__in=Role.staff_roles()
-    ).select_related("staff_detail").first()
+    ).exclude(role=Role.ADMIN).select_related("staff_detail").first()
     if staff is None:
         raise ValidationError({"staff": "Stylist not found."})
 
